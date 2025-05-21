@@ -1,3 +1,5 @@
+## Quelle: https://www.itsmarc.com/crs/mergedprojects/helptop1/helptop1/variable_data_fields/tag_list.html
+## hier werden die tags aus der XML-Datei ihrer deutschen Bedeutung zugeordnet, Übersetzung: Holger mit Hilfe von DeepL
 tag_meanings = {
     ('001', '', ''): 'Kontrollnummer',
     ('007', '', ''): 'Physische Beschreibung / Medientyp',
@@ -5,7 +7,7 @@ tag_meanings = {
     ('020', ' ', ' '): 'ISBN',
     ('022', ' ', ' '): 'ISSN',
     ('040', ' ', ' '): 'Katalogisierungsquelle',
-    ('041', ' ', ' '): 'Sprachencode',
+    ('041', ' ', ' '): 'Sprachcode',
     ('049', ' ', ' '): 'Lokale Besitzinformation',
     ('084', ' ', ' '): 'Klassifikationsnummer',
     ('100', '0', ' '): 'Personenname (Vorname zuerst)',
