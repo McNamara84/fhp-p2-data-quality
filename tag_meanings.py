@@ -6,7 +6,7 @@ tag_meanings = {
     ('008', '', ''): 'Festcodierte Daten (Datum, Sprache, Land, etc.)',
     ('020', ' ', ' '): 'ISBN',
     ('022', ' ', ' '): 'ISSN',
-    ('040', ' ', ' '): 'Katalogisierungsquelle',
+    ('040', ' ', ' '): 'Katalogisierungsstandard', ## es gibt: "rak" (regelwerk alphabetische katalogisierung), "rda" ( Resource Description and Access) und "null" (nicht ausgefüllt)
     ('041', ' ', ' '): 'Sprachcode',
     ('049', ' ', ' '): 'Lokale Besitzinformation',
     ('084', ' ', ' '): 'Klassifikationsnummer',
