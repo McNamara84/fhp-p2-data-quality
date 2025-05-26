@@ -44,4 +44,4 @@ tag_meanings = {
     ('773', '0', '1'): 'Angaben zur übergeordneten Einheit',
     ('969', '#', '#'): 'Lokale administrative Daten (Systeminformationen)',
 }
-#Quelle Anpassung-Übersetzung: https://www.alma-dach.org/alma-marc/bibliographic/ durch Sophie
+## Quelle Anpassung-Übersetzung: https://www.alma-dach.org/alma-marc/bibliographic/ durch Sophie
