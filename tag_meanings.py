@@ -34,7 +34,7 @@ tag_meanings = {
     ('500', ' ', ' '): 'Allgemeine Anmerkung',
     ('520', ' ', ' '): 'Zusammenfassung oder Abstract',
     ('520', '1', ' '): 'unformatierte Zusammenfassung (Rezensionen, Anmerkungen etc.)',
-    ('653', ' ', ' '): 'Schlagwörter oder Indexierungsterm',
+    ('653', ' ', ' '): 'Freie Schlagwörter',
     ('653', ' ', '1'): 'Personenname als Schlagwort',
     ('653', ' ', '2'): 'Körperschaftsname als Schlagwort',
     ('653', ' ', '4'): 'Zeitschlagwort',
