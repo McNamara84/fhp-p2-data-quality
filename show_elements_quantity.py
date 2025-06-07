@@ -81,24 +81,7 @@ def parse_008_field(field_content):
     if field_len >= 39:
         language = field_content[35:38]
         if language and language.strip() and language != '   ':
-            lang_codes = {
-                'ger': 'Deutsch',
-                'eng': 'Englisch',
-                'fre': 'Französisch',
-                'spa': 'Spanisch',
-                'ita': 'Italienisch',
-                'dut': 'Niederländisch',
-                'pol': 'Polnisch',
-                'rus': 'Russisch',
-                'jpn': 'Japanisch',
-                'chi': 'Chinesisch',
-                'por': 'Portugiesisch',
-                'swe': 'Schwedisch',
-                'dan': 'Dänisch',
-                'nor': 'Norwegisch',
-                'fin': 'Finnisch'
-            }
-            lang_name = lang_codes.get(language.lower(), language)
+            lang_name = LANG_CODES.get(language.lower(), language)
             analysis['Sprache'] = f"{language} ({lang_name})"
     
     # Fallback: Prüfe die letzten 3 Zeichen für Sprache (falls Feld kürzer ist)
