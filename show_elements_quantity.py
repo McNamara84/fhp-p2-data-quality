@@ -108,10 +108,43 @@ def parse_008_field(field_content):
     
     return analysis
 
+
+def parse_969_field(datafield_elem):
+    """Parse the local administrative field 969.
+
+    The exact meaning of the codes in this local field differs by institution.
+    This function tries to decode common subfields. Unknown values are returned
+    as-is.
+    """
+
+    analysis = {}
+
+    # Placeholder mappings for common subfield codes. The actual definitions may
+    # need to be extended depending on the cataloguing rules in use.
+    subfield_meanings = {
+        'a': 'Lokaler Status',
+        'b': 'Erfassungsquelle',
+        'c': 'Bearbeitungsvermerk',
+        'd': 'Importkennzeichen',
+    }
+
+    for sub in datafield_elem.findall('subfield'):
+        code = sub.get('code')
+        value = sub.text or ''
+
+        if code in subfield_meanings:
+            key = subfield_meanings[code]
+            analysis[key] = value.strip()
+        else:
+            analysis[f'Subfeld_{code}'] = value.strip()
+
+    return analysis
+
 def parse_marc21_quantity(file_path, output_csv):
     ns = {'marc': 'http://www.loc.gov/MARC21/slim'}
     element_counter = defaultdict(int)
     field_008_counter = defaultdict(int)  # Für detaillierte 008-Analyse
+    field_969_counter = defaultdict(int)  # Für detaillierte 969-Analyse
     
     # Neue Counter für distinkte Werte
     pub_status_values = defaultdict(int)
@@ -120,6 +153,7 @@ def parse_marc21_quantity(file_path, output_csv):
     
     total_records = 0
     total_008_fields = 0
+    total_969_fields = 0
 
     for event, elem in ET.iterparse(file_path, events=('end',)):
         tag_clean = elem.tag.replace(f"{{{ns['marc']}}}", "")
@@ -175,6 +209,16 @@ def parse_marc21_quantity(file_path, output_csv):
                     key = (tag, ind1, ind2)
                     seen_elements.add(key)
 
+                    if tag == '969':
+                        total_969_fields += 1
+                        analysis = parse_969_field(child)
+
+                        for subfield_name in analysis:
+                            field_969_counter[subfield_name] += 1
+
+                        if total_969_fields <= 5:
+                            print(f"969-Feld #{total_969_fields}: {analysis}")
+
             for key in seen_elements:
                 element_counter[key] += 1
 
@@ -183,6 +227,7 @@ def parse_marc21_quantity(file_path, output_csv):
     # Sortieren der Ergebnisse nach Anzahl absteigend
     sorted_elements = sorted(element_counter.items(), key=lambda x: x[1], reverse=True)
     sorted_008_elements = sorted(field_008_counter.items(), key=lambda x: x[1], reverse=True)
+    sorted_969_elements = sorted(field_969_counter.items(), key=lambda x: x[1], reverse=True)
 
     # Hauptdatei: CSV-Datei mit UTF-8-BOM schreiben für Excel-Kompatibilität
     with open(output_csv, 'w', newline='', encoding='utf-8-sig') as csvfile:
@@ -211,6 +256,17 @@ def parse_marc21_quantity(file_path, output_csv):
             percent_total = (count / total_records) * 100
             percent_008 = (count / total_008_fields) * 100 if total_008_fields > 0 else 0
             writer.writerow([subfield_name, count, f'{percent_total:.2f}%', f'{percent_008:.2f}%'])
+
+    # Zusätzliche Datei für detaillierte 969-Feld-Analyse
+    output_969_csv = output_csv.replace('.csv', '_969_details.csv')
+    with open(output_969_csv, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        writer = csv.writer(csvfile, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['969-Unterfeld', 'Anzahl Befüllung', 'Befüllung in % (von allen Datensätzen)', 'Befüllung in % (von 969-Feldern)'])
+
+        for subfield_name, count in sorted_969_elements:
+            percent_total = (count / total_records) * 100
+            percent_969 = (count / total_969_fields) * 100 if total_969_fields > 0 else 0
+            writer.writerow([subfield_name, count, f'{percent_total:.2f}%', f'{percent_969:.2f}%'])
 
     # Zusätzliche Datei für distinkte 008-Werte
     output_008_values_csv = output_csv.replace('.csv', '_008_values.csv')
@@ -242,9 +298,11 @@ def parse_marc21_quantity(file_path, output_csv):
 
     print(f'Insgesamt {total_records} Datensätze verarbeitet.')
     print(f'Davon {total_008_fields} mit 008-Feld.')
+    print(f'Davon {total_969_fields} mit 969-Feld.')
     print(f'Hauptergebnis gespeichert in: {output_csv}')
     print(f'008-Feld-Details gespeichert in: {output_008_csv}')
     print(f'008-Distinkte-Werte gespeichert in: {output_008_values_csv}')
+    print(f'969-Feld-Details gespeichert in: {output_969_csv}')
     
     # Statistik-Übersicht für 008-Felder
     if sorted_008_elements:
@@ -252,6 +310,12 @@ def parse_marc21_quantity(file_path, output_csv):
         for subfield_name, count in sorted_008_elements[:5]:
             percent = (count / total_008_fields) * 100 if total_008_fields > 0 else 0
             print(f'  {subfield_name}: {count} ({percent:.1f}% der 008-Felder)')
+
+    if sorted_969_elements:
+        print(f'\nTop 5 am häufigsten befüllte 969-Unterfelder:')
+        for subfield_name, count in sorted_969_elements[:5]:
+            percent = (count / total_969_fields) * 100 if total_969_fields > 0 else 0
+            print(f'  {subfield_name}: {count} ({percent:.1f}% der 969-Felder)')
     
     # Zusätzliche Statistiken für distinkte Werte
     print(f'\nDistinkte Werte gefunden:')
