@@ -63,14 +63,14 @@ def main() -> None:
     ]
 
     for label, script in buttons:
-        tk.Button(
+        ttk.Button(
             frm,
             text=label,
             width=30,
             command=lambda s=script: run_script(root, progress_label, progress_bar, s),
         ).pack(pady=5)
 
-    tk.Button(
+    ttk.Button(
         frm,
         text="Beenden",
         width=30,
