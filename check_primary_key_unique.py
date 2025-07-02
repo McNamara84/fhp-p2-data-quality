@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import tkinter as tk
 from tkinter import messagebox
 
+DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
 
 def analyze_primary_key_unique(file_path: str):
     ns = {'marc': 'http://www.loc.gov/MARC21/slim'}
