@@ -3,6 +3,21 @@ import csv
 from collections import defaultdict
 from tag_meanings import tag_meanings
 
+# Common language codes used in MARC21 field 008
+LANG_CODES = {
+    "ger": "Deutsch",
+    "eng": "Englisch",
+    "fre": "Französisch",
+    "spa": "Spanisch",
+    "ita": "Italienisch",
+    "dut": "Niederländisch",
+    "pol": "Polnisch",
+    "rus": "Russisch",
+    "jpn": "Japanisch",
+    "chi": "Chinesisch",
+    "por": "Portugiesisch",
+}
+
 def parse_008_field(field_content):
     if not field_content:
         return {}
@@ -89,21 +104,8 @@ def parse_008_field(field_content):
         # Prüfe die letzten 3 Zeichen
         last_chars = field_content[-3:].strip()
         if last_chars and len(last_chars) == 3:
-            lang_codes = {
-                'ger': 'Deutsch',
-                'eng': 'Englisch', 
-                'fre': 'Französisch',
-                'spa': 'Spanisch',
-                'ita': 'Italienisch',
-                'dut': 'Niederländisch',
-                'pol': 'Polnisch',
-                'rus': 'Russisch',
-                'jpn': 'Japanisch',
-                'chi': 'Chinesisch',
-                'por': 'Portugiesisch'
-            }
-            if last_chars.lower() in lang_codes:
-                lang_name = lang_codes[last_chars.lower()]
+            if last_chars.lower() in LANG_CODES:
+                lang_name = LANG_CODES[last_chars.lower()]
                 analysis['Sprache'] = f"{last_chars} ({lang_name})"
     
     return analysis
