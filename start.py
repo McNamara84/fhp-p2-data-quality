@@ -33,13 +33,10 @@ def run_script(
         try:
             subprocess.run([sys.executable, script_path], check=True)
         except subprocess.CalledProcessError as exc:
-            root.after(
-                0,
-                lambda: messagebox.showerror(
-                    "Fehler",
-                    f"Beim Ausführen von {script_name} ist ein Fehler aufgetreten:\n{exc}",
-                ),
+            error_msg = (
+                f"Beim Ausführen von {script_name} ist ein Fehler aufgetreten:\n{exc}"
             )
+            root.after(0, lambda msg=error_msg: messagebox.showerror("Fehler", msg))
         finally:
             root.after(0, on_finish)
 
