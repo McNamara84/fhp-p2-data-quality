@@ -28,33 +28,20 @@ def main() -> None:
     frm = tk.Frame(root, padx=20, pady=20)
     frm.pack()
 
-    tk.Button(
-        frm,
-        text="Nach Besitz splitten",
-        width=30,
-        command=lambda: run_script("datensaetze_nach_besitz.py"),
-    ).pack(pady=5)
+    buttons = [
+        ("Nach Besitz splitten", "datensaetze_nach_besitz.py"),
+        ("Nach Quelle splitten", "datensaetze_nach_quelle.py"),
+        ("Metadatenelemente auflisten", "show_elements.py"),
+        ("Metadatenelemente (Menge) analysieren", "show_elements_quantity.py"),
+    ]
 
-    tk.Button(
-        frm,
-        text="Nach Quelle splitten",
-        width=30,
-        command=lambda: run_script("datensaetze_nach_quelle.py"),
-    ).pack(pady=5)
-
-    tk.Button(
-        frm,
-        text="Metadatenelemente auflisten",
-        width=30,
-        command=lambda: run_script("show_elements.py"),
-    ).pack(pady=5)
-
-    tk.Button(
-        frm,
-        text="Metadatenelemente (Menge) analysieren",
-        width=30,
-        command=lambda: run_script("show_elements_quantity.py"),
-    ).pack(pady=5)
+    for label, script in buttons:
+        tk.Button(
+            frm,
+            text=label,
+            width=30,
+            command=lambda s=script: run_script(s),
+        ).pack(pady=5)
 
     tk.Button(
         frm,
