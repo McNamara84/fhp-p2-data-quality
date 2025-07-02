@@ -25,7 +25,7 @@ def analyze_primary_key_unique(file_path: str):
 
 
 def main() -> None:
-    file_path = sys.argv[1] if len(sys.argv) > 1 else "voebvoll-20241027.xml"
+    file_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_FILE_NAME
     total, duplicates = analyze_primary_key_unique(file_path)
 
     if duplicates == 0:
