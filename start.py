@@ -1,25 +1,27 @@
 import os
 import sys
 import subprocess
+import threading
 import tkinter as tk
 from tkinter import messagebox
 
 
 def run_script(script_name: str) -> None:
     """Run a Python script located in the same directory as this file."""
-    script_path = os.path.join(os.path.dirname(__file__), script_name)
-    if not os.path.exists(script_path):
-        messagebox.showerror("Fehler", f"Skript nicht gefunden: {script_name}")
-        return
+    def execute_script():
+        script_path = os.path.join(os.path.dirname(__file__), script_name)
+        if not os.path.exists(script_path):
+            messagebox.showerror("Fehler", f"Skript nicht gefunden: {script_name}")
+            return
 
-    try:
-        subprocess.run([sys.executable, script_path], check=True)
-    except subprocess.CalledProcessError as exc:
-        messagebox.showerror(
-            "Fehler", f"Beim Ausführen von {script_name} ist ein Fehler aufgetreten:\n{exc}"
-        )
+        try:
+            subprocess.run([sys.executable, script_path], check=True)
+        except subprocess.CalledProcessError as exc:
+            messagebox.showerror(
+                "Fehler", f"Beim Ausführen von {script_name} ist ein Fehler aufgetreten:\n{exc}"
+            )
 
-
+    threading.Thread(target=execute_script).start()
 def main() -> None:
     root = tk.Tk()
     root.title("FHP Daten-Qualität Skripte")
