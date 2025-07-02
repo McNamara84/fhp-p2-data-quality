@@ -61,6 +61,7 @@ def main() -> None:
         ("Metadatenelemente auflisten", "show_elements.py"),
         ("Metadatenelemente (Menge) analysieren", "show_elements_quantity.py"),
         ("Prim\u00e4rschl\u00fcssel pr\u00fcfen", "check_primary_key_unique.py"),
+        ("ISBN pr\u00fcfen", "check_isbn.py"),
     ]
 
     for label, script in buttons:
