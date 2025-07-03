@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 import urllib.request
 import json
-from typing import Callable, Tuple
+from typing import Callable, Dict, Tuple
 
 DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
 
@@ -35,7 +35,7 @@ def is_valid_isbn13(isbn: str) -> bool:
 def isbn_exists(isbn: str) -> bool:
     url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json"
     try:
-        with urllib.request.urlopen(url, timeout=10) as f:
+        with urllib.request.urlopen(url, timeout=5) as f:
             data = json.loads(f.read().decode())
         return bool(data)
     except Exception:
@@ -47,6 +47,7 @@ def analyze_isbn(file_path: str, isbn_exist_func: Callable[[str], bool] = isbn_e
     total_with_isbn = 0
     invalid_syntax = 0
     invalid_real = 0
+    cache: Dict[str, bool] = {}
 
     for event, elem in ET.iterparse(file_path, events=("end",)):
         if elem.tag.replace(f"{{{ns['marc']}}}", "") != "record":
@@ -72,13 +73,23 @@ def analyze_isbn(file_path: str, isbn_exist_func: Callable[[str], bool] = isbn_e
                 if not is_valid_isbn10(clean):
                     syntax_ok = False
                 else:
-                    if not isbn_exist_func(clean):
+                    if clean in cache:
+                        exists = cache[clean]
+                    else:
+                        exists = isbn_exist_func(clean)
+                        cache[clean] = exists
+                    if not exists:
                         exists_ok = False
             elif len(clean) == 13:
                 if not is_valid_isbn13(clean):
                     syntax_ok = False
                 else:
-                    if not isbn_exist_func(clean):
+                    if clean in cache:
+                        exists = cache[clean]
+                    else:
+                        exists = isbn_exist_func(clean)
+                        cache[clean] = exists
+                    if not exists:
                         exists_ok = False
             else:
                 syntax_ok = False
