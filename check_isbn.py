@@ -4,7 +4,8 @@ import tkinter as tk
 from tkinter import messagebox
 import urllib.request
 import json
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Iterable, Set, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
 
@@ -33,31 +34,37 @@ def is_valid_isbn13(isbn: str) -> bool:
 
 
 def isbn_exists(isbn: str) -> bool:
-    url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json"
+    """Return ``True`` if the Google Books API knows the given ISBN."""
+
+    url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
     try:
         with urllib.request.urlopen(url, timeout=5) as f:
             data = json.loads(f.read().decode())
-        return bool(data)
+        return data.get("totalItems", 0) > 0
     except Exception:
         return False
 
 
-def analyze_isbn(file_path: str, isbn_exist_func: Callable[[str], bool] = isbn_exists) -> Tuple[int, int, int]:
-    ns = {"marc": "http://www.loc.gov/MARC21/slim"}
+def _collect_isbns(
+    file_path: str,
+    ns: Dict[str, str],
+) -> Tuple[int, int, Set[str]]:
+    """Return ``total_with_isbn``, ``invalid_syntax`` and all unique valid ISBNs."""
+
     total_with_isbn = 0
     invalid_syntax = 0
-    invalid_real = 0
-    cache: Dict[str, bool] = {}
+    unique_valid: Set[str] = set()
 
-    for event, elem in ET.iterparse(file_path, events=("end",)):
+    for _, elem in ET.iterparse(file_path, events=("end",)):
         if elem.tag.replace(f"{{{ns['marc']}}}", "") != "record":
             continue
 
-        isbns = []
-        for df in elem.findall('datafield[@tag="020"]'):
-            for sf in df.findall('subfield'):
-                if sf.get('code') == 'a' and sf.text:
-                    isbns.append(sf.text.strip())
+        isbns = [
+            sf.text.strip()
+            for df in elem.findall('datafield[@tag="020"]')
+            for sf in df.findall('subfield')
+            if sf.get('code') == 'a' and sf.text
+        ]
 
         if not isbns:
             elem.clear()
@@ -65,43 +72,128 @@ def analyze_isbn(file_path: str, isbn_exist_func: Callable[[str], bool] = isbn_e
 
         total_with_isbn += 1
         syntax_ok = True
-        exists_ok = True
 
         for raw in isbns:
             clean = raw.replace('-', '').replace(' ', '')
-            if len(clean) == 10:
-                if not is_valid_isbn10(clean):
-                    syntax_ok = False
-                else:
-                    if clean in cache:
-                        exists = cache[clean]
-                    else:
-                        exists = isbn_exist_func(clean)
-                        cache[clean] = exists
-                    if not exists:
-                        exists_ok = False
-            elif len(clean) == 13:
-                if not is_valid_isbn13(clean):
-                    syntax_ok = False
-                else:
-                    if clean in cache:
-                        exists = cache[clean]
-                    else:
-                        exists = isbn_exist_func(clean)
-                        cache[clean] = exists
-                    if not exists:
-                        exists_ok = False
+            if len(clean) == 10 and is_valid_isbn10(clean):
+                unique_valid.add(clean)
+            elif len(clean) == 13 and is_valid_isbn13(clean):
+                unique_valid.add(clean)
             else:
                 syntax_ok = False
 
         if not syntax_ok:
             invalid_syntax += 1
-        elif not exists_ok:
+
+        elem.clear()
+
+    return total_with_isbn, invalid_syntax, unique_valid
+
+
+def _check_exists_parallel(
+    isbns: Iterable[str],
+    isbn_exist_func: Callable[[str], bool],
+    max_workers: int = 10,
+) -> Dict[str, bool]:
+    """Check ISBN existence in parallel and return a cache dict."""
+
+    results: Dict[str, bool] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as exe:
+        future_map = {exe.submit(isbn_exist_func, i): i for i in isbns}
+        processed = 0
+        total = len(future_map)
+        for future in as_completed(future_map):
+            isbn = future_map[future]
+            try:
+                results[isbn] = future.result()
+            except Exception:
+                results[isbn] = False
+            processed += 1
+            if processed % 1000 == 0 or processed == total:
+                print(
+                    f"Prüfe ISBN-Existenz: {processed}/{total}",
+                    flush=True,
+                )
+    return results
+
+
+def _count_invalid_real(
+    file_path: str,
+    ns: Dict[str, str],
+    cache: Dict[str, bool],
+    invalid_syntax: int,
+    total_with_isbn: int,
+) -> Tuple[int, int, int]:
+    """Second pass that counts invalid_real while printing progress."""
+
+    invalid_real = 0
+    processed = 0
+
+    for _, elem in ET.iterparse(file_path, events=("end",)):
+        if elem.tag.replace(f"{{{ns['marc']}}}", "") != "record":
+            continue
+
+        isbns = [
+            sf.text.strip()
+            for df in elem.findall('datafield[@tag="020"]')
+            for sf in df.findall('subfield')
+            if sf.get('code') == 'a' and sf.text
+        ]
+
+        if not isbns:
+            elem.clear()
+            continue
+
+        processed += 1
+        syntax_ok = True
+        valid_isbns: Set[str] = set()
+
+        for raw in isbns:
+            clean = raw.replace('-', '').replace(' ', '')
+            if len(clean) == 10 and is_valid_isbn10(clean):
+                valid_isbns.add(clean)
+            elif len(clean) == 13 and is_valid_isbn13(clean):
+                valid_isbns.add(clean)
+            else:
+                syntax_ok = False
+
+        if syntax_ok and any(not cache.get(i, False) for i in valid_isbns):
             invalid_real += 1
+
+        if processed % 1000 == 0 or processed == total_with_isbn:
+            correct = processed - invalid_syntax - invalid_real
+            print(
+                f"Datensätze: {processed}/{total_with_isbn} | "
+                f"korrekt: {correct} | "
+                f"Syntaxfehler: {invalid_syntax} | "
+                f"nicht belegt: {invalid_real}",
+                flush=True,
+            )
 
         elem.clear()
 
     return total_with_isbn, invalid_syntax, invalid_real
+
+
+def analyze_isbn(
+    file_path: str,
+    isbn_exist_func: Callable[[str], bool] = isbn_exists,
+) -> Tuple[int, int, int]:
+    """Analyze ISBN syntax and existence.
+
+    The XML file is processed in two passes. First all unique, syntactically
+    valid ISBNs are collected. Their existence is then checked concurrently.
+    During the second pass the numbers of valid and invalid ISBNs are printed
+    as progress information.
+    """
+
+    ns = {"marc": "http://www.loc.gov/MARC21/slim"}
+
+    total_with_isbn, invalid_syntax, unique_valid = _collect_isbns(file_path, ns)
+
+    cache = _check_exists_parallel(unique_valid, isbn_exist_func)
+
+    return _count_invalid_real(file_path, ns, cache, invalid_syntax, total_with_isbn)
 
 
 def main() -> None:
