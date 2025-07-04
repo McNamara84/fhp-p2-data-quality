@@ -1,4 +1,3 @@
-import sys
 import xml.etree.ElementTree as ET
 import tkinter as tk
 from tkinter import messagebox
@@ -6,8 +5,10 @@ import urllib.request
 import json
 from typing import Callable, Dict, Iterable, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import argparse
 
 DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
+DEFAULT_MAX_WORKERS = 100
 
 
 def is_valid_isbn10(isbn: str) -> bool:
@@ -93,7 +94,7 @@ def _collect_isbns(
 def _check_exists_parallel(
     isbns: Iterable[str],
     isbn_exist_func: Callable[[str], bool],
-    max_workers: int = 10,
+    max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> Dict[str, bool]:
     """Check ISBN existence in parallel and return a cache dict."""
 
@@ -178,6 +179,7 @@ def _count_invalid_real(
 def analyze_isbn(
     file_path: str,
     isbn_exist_func: Callable[[str], bool] = isbn_exists,
+    max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> Tuple[int, int, int]:
     """Analyze ISBN syntax and existence.
 
@@ -191,14 +193,24 @@ def analyze_isbn(
 
     total_with_isbn, invalid_syntax, unique_valid = _collect_isbns(file_path, ns)
 
-    cache = _check_exists_parallel(unique_valid, isbn_exist_func)
+    cache = _check_exists_parallel(unique_valid, isbn_exist_func, max_workers=max_workers)
 
     return _count_invalid_real(file_path, ns, cache, invalid_syntax, total_with_isbn)
 
 
 def main() -> None:
-    file_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_FILE_NAME
-    total, invalid_syntax, invalid_real = analyze_isbn(file_path)
+    parser = argparse.ArgumentParser(description="ISBN-Check")
+    parser.add_argument("file", nargs="?", default=DEFAULT_FILE_NAME, help="XML file to analyze")
+    parser.add_argument(
+        "-w",
+        "--workers",
+        type=int,
+        default=DEFAULT_MAX_WORKERS,
+        help="number of parallel requests to Google Books API",
+    )
+    args = parser.parse_args()
+
+    total, invalid_syntax, invalid_real = analyze_isbn(args.file, max_workers=args.workers)
 
     if invalid_syntax == 0 and invalid_real == 0:
         message = f"Alle {total} Datensätze mit ISBN sind korrekt."
