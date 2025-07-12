@@ -1,28 +1,19 @@
 import xml.etree.ElementTree as ET
 
-def calculate_leader_01234cam_percentage(xml_file_path):
-    total_records = 0
-    matching_records = 0
+from marc_utils import percentage_of_records
 
-    # Iteriere über die XML-Datei, und lausche auf das 'end'-Ereignis, wenn jedes Element fertig geparst wurde.
-    for event, elem in ET.iterparse(xml_file_path, events=('end',)):
-        if elem.tag == 'record':
-            total_records += 1
-            leader = elem.find('leader')
-            if leader is not None and leader.text is not None and leader.text.startswith("01234cam"):
-                matching_records += 1
-            
-            # Speicher freigeben für das verarbeitete Element
-            elem.clear()
 
-    if total_records > 0:
-        percentage = (matching_records / total_records) * 100
-    else:
-        percentage = 0
+def calculate_leader_01234cam_percentage(xml_file_path: str) -> float:
+    """Return percentage of records with leader starting ``01234cam``."""
 
-    return percentage
+    def predicate(elem: ET.Element) -> bool:
+        leader = elem.find('leader')
+        return bool(leader is not None and leader.text and leader.text.startswith('01234cam'))
 
-# Verwende die Funktion mit der angegebenen XML-Datei
-xml_file_path = 'voebvoll-20241027.xml'
-percentage = calculate_leader_01234cam_percentage(xml_file_path)
-print(f"Percentage of records with leader starting '01234cam': {percentage:.2f}%")
+    return percentage_of_records(xml_file_path, predicate)
+
+
+if __name__ == '__main__':
+    xml_file_path = 'voebvoll-20241027.xml'
+    percentage = calculate_leader_01234cam_percentage(xml_file_path)
+    print(f"Percentage of records with leader starting '01234cam': {percentage:.2f}%")
