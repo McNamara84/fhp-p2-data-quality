@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 from typing import Callable, Iterable, List, Tuple
+from io import IOBase as IO
 
 def make_safe_filename(name: str) -> str:
     """Return a filesystem-friendly version of ``name``."""
@@ -15,7 +16,7 @@ def split_records(
 ) -> None:
     """Split ``input_file`` into multiple files using ``extractor`` to determine filenames."""
     os.makedirs(output_dir, exist_ok=True)
-    handles: dict[str, any] = {}
+    handles: dict[str, IO[str]] = {}
     header_lines: List[str] = []
     in_header = True
     buffer: List[str] = []
