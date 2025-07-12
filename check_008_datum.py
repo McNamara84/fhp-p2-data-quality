@@ -9,7 +9,7 @@ def calculate_008_date_percentage(xml_file_path):
         if elem.tag == 'record':
             total_records += 1  # Gesamtanzahl der Records hochzählen
             controlfield_008 = elem.find('./controlfield[@tag="008"]')
-            if controlfield_008 is not None and controlfield_008.text.startswith("991231"):
+            if controlfield_008 is not None and controlfield_008.text is not None and controlfield_008.text.startswith("991231"):
                 matching_records += 1  # Anzahl der passenden Records hochzählen
             
             # Speicher freigeben für das verarbeitete Element
