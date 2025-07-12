@@ -61,6 +61,7 @@ def main() -> None:
         ("ISBN prüfen", "check_isbn.py"),
         ("Leader prüfen", "check_leader_element.py"),
         ("Datum prüfen", "check_008_datum.py"),
+        ("Doppelte ISBN/ISSN prüfen", "check_duplicate_identifiers.py"),
     ]
 
     for label, script in buttons:
