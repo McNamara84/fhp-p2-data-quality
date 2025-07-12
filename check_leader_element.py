@@ -9,7 +9,7 @@ def calculate_leader_01234cam_percentage(xml_file_path):
         if elem.tag == 'record':
             total_records += 1
             leader = elem.find('leader')
-            if leader is not None and leader.text.startswith("01234cam"):
+            if leader is not None and leader.text is not None and leader.text.startswith("01234cam"):
                 matching_records += 1
             
             # Speicher freigeben für das verarbeitete Element
