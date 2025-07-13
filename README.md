@@ -33,3 +33,5 @@ pytest
 The GitHub Actions workflow runs the same tests automatically on every pull request.
 
 ## License
+
+This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for details.
