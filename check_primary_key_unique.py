@@ -1,27 +1,24 @@
 import sys
-import xml.etree.ElementTree as ET
 import tkinter as tk
 from tkinter import messagebox
 
-DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
+from marc_utils import (
+    DEFAULT_FILE_NAME,
+    iter_records,
+    get_controlfield_value,
+)
 
 def analyze_primary_key_unique(file_path: str):
-    ns = {'marc': 'http://www.loc.gov/MARC21/slim'}
     seen = set()
     duplicates = 0
     total = 0
-    for event, elem in ET.iterparse(file_path, events=("end",)):
-        if (
-            elem.tag.replace(f"{{{ns['marc']}}}", "") == "controlfield"
-            and elem.get("tag") == "001"
-        ):
-            total += 1
-            value = (elem.text or "").strip()
-            if value in seen:
-                duplicates += 1
-            else:
-                seen.add(value)
-        elem.clear()
+    for elem in iter_records(file_path):
+        value = get_controlfield_value(elem, "001")
+        total += 1
+        if value in seen:
+            duplicates += 1
+        else:
+            seen.add(value)
     return total, duplicates
 
 

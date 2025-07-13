@@ -7,7 +7,11 @@ from typing import Callable, Dict, Iterable, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import argparse
 
-DEFAULT_FILE_NAME = "voebvoll-20241027.xml"
+from marc_utils import (
+    DEFAULT_FILE_NAME,
+    iter_records,
+    get_subfield_values,
+)
 DEFAULT_MAX_WORKERS = 100
 
 
@@ -46,29 +50,16 @@ def isbn_exists(isbn: str) -> bool:
         return False
 
 
-def _collect_isbns(
-    file_path: str,
-    ns: Dict[str, str],
-) -> Tuple[int, int, Set[str]]:
+def _collect_isbns(file_path: str) -> Tuple[int, int, Set[str]]:
     """Return ``total_with_isbn``, ``invalid_syntax`` and all unique valid ISBNs."""
 
     total_with_isbn = 0
     invalid_syntax = 0
     unique_valid: Set[str] = set()
 
-    for _, elem in ET.iterparse(file_path, events=("end",)):
-        if elem.tag.replace(f"{{{ns['marc']}}}", "") != "record":
-            continue
-
-        isbns = [
-            sf.text.strip()
-            for df in elem.findall('datafield[@tag="020"]')
-            for sf in df.findall('subfield')
-            if sf.get('code') == 'a' and sf.text
-        ]
-
+    for elem in iter_records(file_path):
+        isbns = get_subfield_values(elem, "020", "a")
         if not isbns:
-            elem.clear()
             continue
 
         total_with_isbn += 1
@@ -85,8 +76,6 @@ def _collect_isbns(
 
         if not syntax_ok:
             invalid_syntax += 1
-
-        elem.clear()
 
     return total_with_isbn, invalid_syntax, unique_valid
 
@@ -120,7 +109,6 @@ def _check_exists_parallel(
 
 def _count_invalid_real(
     file_path: str,
-    ns: Dict[str, str],
     cache: Dict[str, bool],
     invalid_syntax: int,
     total_with_isbn: int,
@@ -130,19 +118,9 @@ def _count_invalid_real(
     invalid_real = 0
     processed = 0
 
-    for _, elem in ET.iterparse(file_path, events=("end",)):
-        if elem.tag.replace(f"{{{ns['marc']}}}", "") != "record":
-            continue
-
-        isbns = [
-            sf.text.strip()
-            for df in elem.findall('datafield[@tag="020"]')
-            for sf in df.findall('subfield')
-            if sf.get('code') == 'a' and sf.text
-        ]
-
+    for elem in iter_records(file_path):
+        isbns = get_subfield_values(elem, "020", "a")
         if not isbns:
-            elem.clear()
             continue
 
         processed += 1
@@ -171,8 +149,6 @@ def _count_invalid_real(
                 flush=True,
             )
 
-        elem.clear()
-
     return total_with_isbn, invalid_syntax, invalid_real
 
 
@@ -189,13 +165,11 @@ def analyze_isbn(
     as progress information.
     """
 
-    ns = {"marc": "http://www.loc.gov/MARC21/slim"}
-
-    total_with_isbn, invalid_syntax, unique_valid = _collect_isbns(file_path, ns)
+    total_with_isbn, invalid_syntax, unique_valid = _collect_isbns(file_path)
 
     cache = _check_exists_parallel(unique_valid, isbn_exist_func, max_workers=max_workers)
 
-    return _count_invalid_real(file_path, ns, cache, invalid_syntax, total_with_isbn)
+    return _count_invalid_real(file_path, cache, invalid_syntax, total_with_isbn)
 
 
 def main() -> None:
