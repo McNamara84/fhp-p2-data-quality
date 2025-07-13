@@ -30,3 +30,6 @@ pytest
 ```
 
 The GitHub Actions workflow runs the same tests automatically on every pull request.
+
+## License
+
