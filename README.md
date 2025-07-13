@@ -1,6 +1,7 @@
 # FHP Data Quality Project
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Tests](https://github.com/fhp-his/fhp-p2-data-quality/actions/workflows/python-app.yml/badge.svg)
 
 ## About the Project
 
@@ -32,4 +33,3 @@ pytest
 The GitHub Actions workflow runs the same tests automatically on every pull request.
 
 ## License
-
