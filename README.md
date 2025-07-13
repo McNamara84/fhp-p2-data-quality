@@ -20,3 +20,13 @@ pip install flake8 pytest
 ```
 
 The analysis scripts rely only on the Python standard library, so no further packages are required.
+
+## Running Tests
+
+Execute the unit tests with `pytest`:
+
+```bash
+pytest
+```
+
+The GitHub Actions workflow runs the same tests automatically on every pull request.
