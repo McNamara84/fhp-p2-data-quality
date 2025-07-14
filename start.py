@@ -62,6 +62,7 @@ def main() -> None:
         ("Leader prüfen", "check_leader_element.py"),
         ("Datum prüfen", "check_008_datum.py"),
         ("Doppelte ISBN/ISSN prüfen", "check_duplicate_identifiers.py"),
+        ("In SQLite exportieren", "export_to_sqlite.py"),
     ]
 
     for label, script in buttons:
