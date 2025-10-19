@@ -1,3 +1,28 @@
+import difflib
+
+# Konfiguration: Schwellenwerte für Korrekturen
+LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
+CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
+
+# Mapping isbnlib -> MARC-Felder
+ISBNLIB_MARC_MAP = {
+    "Title": ("245", "a"),
+    "Authors": ("100", "a"),
+    "Publisher": ("260", "b"),
+    "Year": ("260", "c"),
+    "Language": ("008", None),  # Sonderfall
+}
+
+def is_abbreviation(value, full_value):
+    # Prüft, ob value eine Abkürzung von full_value ist
+    if not value or not full_value:
+        return False
+    # z.B. "A." vs "Anna" oder "Max" vs "Maximilian"
+    return value.endswith(".") or (len(value) <= 4 and full_value.lower().startswith(value.lower()))
+
+def similarity(a, b):
+    # Levenshtein-Ähnlichkeit
+    return difflib.SequenceMatcher(None, a, b).ratio()
 import xml.etree.ElementTree as ET
 import sys
 import os
@@ -40,14 +65,57 @@ def main(xml_path):
         print(f"{multi_isbn_warnings} Datensätze mit mehreren ISBNs wurden übersprungen.")
 
     print("Metadatenabfrage mit isbnlib...")
+    change_log = []
     for idx, (record, isbn) in enumerate(isbn_records, 1):
         meta = isbnlib.meta(isbn)
         if not meta:
             isbn_not_found += 1
             print(f"[{idx}] ISBN nicht gefunden: {isbn}")
-        # Für spätere Schritte: meta enthält die angereicherten Daten
+            continue
+
+        # Mapping und Anreicherung
+        for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
+            marc_value = None
+            # MARC-Feld suchen
+            for datafield in record.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    if sub_code:
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == sub_code:
+                                marc_value = subfield.text.strip() if subfield.text else ""
+                                marc_subfield = subfield
+                                break
+                    else:
+                        marc_value = None  # Sonderfall
+            # Wert aus isbnlib
+            meta_value = meta.get(key)
+            if not meta_value:
+                continue
+            # Autoren als Liste behandeln
+            if key == "Authors" and isinstance(meta_value, list):
+                meta_value = ", ".join(meta_value)
+            # Leeres Feld befüllen
+            if (marc_value is None or marc_value == "") and meta_value:
+                # MARC-Feld existiert, Subfield leer
+                if sub_code and marc_subfield:
+                    marc_subfield.text = meta_value
+                    change_log.append(f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'")
+                # MARC-Feld existiert nicht: kann später ergänzt werden
+            # Abkürzung erkennen und ersetzen
+            elif marc_value and is_abbreviation(marc_value, meta_value):
+                if sub_code and marc_subfield:
+                    marc_subfield.text = meta_value
+                    change_log.append(f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'")
+            # Falsch befülltes Feld korrigieren
+            elif marc_value and similarity(marc_value, meta_value) < LEVENSHTEIN_THRESHOLD and similarity(marc_value, meta_value) > CONFIDENCE_THRESHOLD:
+                if sub_code and marc_subfield:
+                    marc_subfield.text = meta_value
+                    change_log.append(f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {similarity(marc_value, meta_value):.2f})")
 
     print(f"{isbn_not_found} von {len(isbn_records)} ISBNs konnten nicht angereichert werden.")
+    print("Protokoll der Änderungen:")
+    for entry in change_log:
+        print(entry)
 
 if __name__ == "__main__":
     # Standarddatei, kann später per Argument angepasst werden
