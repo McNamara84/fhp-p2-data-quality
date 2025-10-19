@@ -4,6 +4,8 @@ import sys
 import os
 import time
 import logging
+import socket
+from urllib.error import URLError
 try:
     import isbnlib
 except ImportError:
@@ -14,7 +16,9 @@ except ImportError:
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
 CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
-RATE_LIMIT_SECONDS = 0.25  # Wartezeit zwischen isbnlib-Anfragen
+RATE_LIMIT_SECONDS = 0.5  # Wartezeit zwischen isbnlib-Anfragen
+MAX_RETRIES = 3
+BACKOFF_BASE_SECONDS = 0.75
 
 # Mapping isbnlib -> MARC-Felder
 ISBNLIB_MARC_MAP = {
@@ -95,14 +99,46 @@ def main(xml_path):
 
     print("Metadatenabfrage mit isbnlib...")
     change_log = []
+    network_errors = 0
     for idx, (record, isbn) in enumerate(isbn_records, 1):
-        meta = isbnlib.meta(isbn)
-        # Rate Limit
+        # ISBN normalisieren (bevorzugt ISBN-13)
+        try:
+            norm = isbnlib.canonical(isbn) if hasattr(isbnlib, 'canonical') else isbn
+            if hasattr(isbnlib, 'to_isbn13'):
+                norm13 = isbnlib.to_isbn13(norm) or norm
+            else:
+                norm13 = norm
+        except Exception:
+            norm13 = isbn
+
+        meta = None
+        # Retry mit Exponential-Backoff
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                meta = isbnlib.meta(norm13)
+                break
+            except (URLError, socket.timeout) as e:
+                network_errors += 1
+                wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+                msg = f"[{idx}] Netzwerkfehler bei ISBN {norm13} (Versuch {attempt}/{MAX_RETRIES}): {e}. Warte {wait:.2f}s"
+                print(msg)
+                logger.warning(msg)
+                time.sleep(wait)
+            except Exception as e:
+                # Andere Fehler von isbnlib (z.B. Service-spezifisch)
+                network_errors += 1
+                msg = f"[{idx}] Fehler bei ISBN {norm13}: {e}"
+                print(msg)
+                logger.warning(msg)
+                break
+
+        # Rate Limit (grundsätzlich zwischen Anfragen)
         time.sleep(RATE_LIMIT_SECONDS)
+
         if not meta:
             isbn_not_found += 1
-            print(f"[{idx}] ISBN nicht gefunden: {isbn}")
-            logger.warning(f"ISBN nicht gefunden: {isbn}")
+            print(f"[{idx}] ISBN nicht gefunden: {norm13}")
+            logger.warning(f"ISBN nicht gefunden: {norm13}")
             continue
 
         # 1) Felder ermitteln (erste Runde)
