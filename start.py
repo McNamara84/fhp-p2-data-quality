@@ -57,6 +57,7 @@ def main() -> None:
         ("Nach Quelle splitten", "datensaetze_nach_quelle.py"),
         ("Metadatenelemente auflisten", "show_elements.py"),
         ("Metadatenelemente (Menge) analysieren", "show_elements_quantity.py"),
+        ("Metadaten anreichern", "enrich_metadata.py"),
         ("Primärschlüssel prüfen", "check_primary_key_unique.py"),
         ("ISBN prüfen", "check_isbn.py"),
         ("Leader prüfen", "check_leader_element.py"),
