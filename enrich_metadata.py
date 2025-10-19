@@ -2,6 +2,8 @@ import difflib
 import xml.etree.ElementTree as ET
 import sys
 import os
+import time
+import logging
 try:
     import isbnlib
 except ImportError:
@@ -11,6 +13,8 @@ except ImportError:
 # Konfiguration: Schwellenwerte für Korrekturen
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
+CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
+RATE_LIMIT_SECONDS = 0.25  # Wartezeit zwischen isbnlib-Anfragen
 
 # Mapping isbnlib -> MARC-Felder
 ISBNLIB_MARC_MAP = {
@@ -20,6 +24,14 @@ ISBNLIB_MARC_MAP = {
     "Year": ("260", "c"),
     "Language": ("008", None),  # Sonderfall
 }
+
+# Logger einrichten (Datei-basiert)
+logger = logging.getLogger("enrich_metadata")
+logger.setLevel(logging.INFO)
+_fh = logging.FileHandler("enrich_metadata.log", encoding="utf-8")
+_fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s"))
+if not logger.handlers:
+    logger.addHandler(_fh)
 
 def is_abbreviation(value, full_value):
     """Prüft, ob value eine Abkürzung von full_value ist.
@@ -85,16 +97,19 @@ def main(xml_path):
     change_log = []
     for idx, (record, isbn) in enumerate(isbn_records, 1):
         meta = isbnlib.meta(isbn)
+        # Rate Limit
+        time.sleep(RATE_LIMIT_SECONDS)
         if not meta:
             isbn_not_found += 1
             print(f"[{idx}] ISBN nicht gefunden: {isbn}")
+            logger.warning(f"ISBN nicht gefunden: {isbn}")
             continue
 
-        # Mapping und Anreicherung
+        # 1) Felder ermitteln (erste Runde)
+        fields_info = []  # (key, marc_tag, sub_code, marc_value, marc_subfield)
         for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
             marc_value = None
             marc_subfield = None
-            # MARC-Feld suchen
             for datafield in record.findall("datafield"):
                 if datafield.get("tag") == marc_tag:
                     if sub_code:
@@ -105,36 +120,74 @@ def main(xml_path):
                                 break
                     else:
                         marc_value = None  # Sonderfall
-            # Wert aus isbnlib
+            fields_info.append((key, marc_tag, sub_code, marc_value, marc_subfield))
+
+        # 2) Konfliktquote prüfen
+        comparable = 0
+        conflicts = 0
+        for key, marc_tag, sub_code, marc_value, _ in fields_info:
             meta_value = meta.get(key)
-            if not meta_value:
-                continue
-            # Autoren als Liste behandeln
             if key == "Authors" and isinstance(meta_value, list):
                 meta_value = ", ".join(meta_value)
+            if meta_value is None or str(meta_value).strip() == "":
+                continue
+            if marc_value is None or str(marc_value).strip() == "":
+                continue
+            # identische Werte sind kein Konflikt
+            if str(marc_value).strip().lower() == str(meta_value).strip().lower():
+                comparable += 1
+                continue
+            # Abkürzungen sind kein Konflikt
+            if is_abbreviation(str(marc_value), str(meta_value)):
+                comparable += 1
+                continue
+            # Ähnlichkeit bewerten
+            sim = similarity(str(marc_value), str(meta_value))
+            comparable += 1
+            if sim < CONFLICT_SIMILARITY_THRESHOLD:
+                conflicts += 1
+
+        if comparable > 0 and conflicts > (comparable / 2):
+            rec_id = next((cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001'), 'unbekannt')
+            msg = f"[{idx}] Konfliktquote zu hoch (Konflikte: {conflicts}/{comparable}) für Record {rec_id} (ISBN {isbn}) – Datensatz übersprungen."
+            print(msg)
+            logger.warning(msg)
+            continue
+
+        # 3) Mapping anwenden (zweite Runde)
+        for key, marc_tag, sub_code, marc_value, marc_subfield in fields_info:
+            meta_value = meta.get(key)
+            if key == "Authors" and isinstance(meta_value, list):
+                meta_value = ", ".join(meta_value)
+            if not meta_value:
+                continue
             # Keine Aktion wenn identisch
             if marc_value is not None and str(marc_value).strip() == str(meta_value).strip():
                 continue
             # Leeres Feld befüllen
             if (marc_value is None or marc_value == "") and meta_value:
-                # MARC-Feld existiert, Subfield leer
                 if sub_code and (marc_subfield is not None):
                     marc_subfield.text = meta_value
-                    change_log.append(f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'")
-                # MARC-Feld existiert nicht: kann später ergänzt werden
+                    msg = f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'"
+                    change_log.append(msg)
+                    logger.info(msg)
             # Abkürzung erkennen und ersetzen
-            elif marc_value and is_abbreviation(marc_value, meta_value):
+            elif marc_value and is_abbreviation(str(marc_value), str(meta_value)):
                 if sub_code and (marc_subfield is not None):
                     marc_subfield.text = meta_value
-                    change_log.append(f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'")
+                    msg = f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'"
+                    change_log.append(msg)
+                    logger.info(msg)
             # Falsch befülltes Feld korrigieren
             else:
                 if marc_value:
-                    sim = similarity(marc_value, meta_value)
+                    sim = similarity(str(marc_value), str(meta_value))
                     if sim < LEVENSHTEIN_THRESHOLD and sim > CONFIDENCE_THRESHOLD:
                         if sub_code and (marc_subfield is not None):
                             marc_subfield.text = meta_value
-                            change_log.append(f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {sim:.2f})")
+                            msg = f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {sim:.2f})"
+                            change_log.append(msg)
+                            logger.info(msg)
 
     print(f"{isbn_not_found} von {len(isbn_records)} ISBNs konnten nicht angereichert werden.")
     print("Protokoll der Änderungen:")
