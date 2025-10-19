@@ -17,10 +17,10 @@ except ImportError:
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
 CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
-RATE_LIMIT_SECONDS = 0.3  # Wartezeit zwischen isbnlib-Anfragen
+RATE_LIMIT_SECONDS = 1.0  # Wartezeit zwischen isbnlib-Anfragen (erhöht wegen Rate-Limiting)
 MAX_RETRIES = 3
-BACKOFF_BASE_SECONDS = 0.75
-MAX_WORKERS = 5  # Parallele Threads für API-Anfragen
+BACKOFF_BASE_SECONDS = 2.0  # Längerer Backoff bei 429-Fehlern
+MAX_WORKERS = 2  # Reduziert auf 2 parallele Threads, um API-Limits zu respektieren
 
 # Mapping isbnlib -> MARC-Felder
 ISBNLIB_MARC_MAP = {
@@ -99,8 +99,14 @@ def fetch_isbn_metadata(idx, isbn):
             error_msg = f"Netzwerkfehler (Versuch {attempt}/{MAX_RETRIES}): {e}"
             time.sleep(wait)
         except Exception as e:
-            error_msg = f"Fehler: {e}"
-            break
+            # Bei 429 (Rate Limit) längere Wartezeit
+            if "429" in str(e) or "many requests" in str(e).lower():
+                wait = BACKOFF_BASE_SECONDS * (3 ** attempt)  # Exponentiell länger
+                error_msg = f"Rate Limit (429) erreicht (Versuch {attempt}/{MAX_RETRIES})"
+                time.sleep(wait)
+            else:
+                error_msg = f"Fehler: {e}"
+                break
 
     return idx, norm13, meta, error_msg
 
