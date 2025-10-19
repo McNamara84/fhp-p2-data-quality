@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.error import URLError
 try:
     import isbnlib
@@ -16,9 +17,10 @@ except ImportError:
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
 CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
-RATE_LIMIT_SECONDS = 0.5  # Wartezeit zwischen isbnlib-Anfragen
+RATE_LIMIT_SECONDS = 0.3  # Wartezeit zwischen isbnlib-Anfragen
 MAX_RETRIES = 3
 BACKOFF_BASE_SECONDS = 0.75
+MAX_WORKERS = 5  # Parallele Threads für API-Anfragen
 
 # Mapping isbnlib -> MARC-Felder
 ISBNLIB_MARC_MAP = {
@@ -32,10 +34,13 @@ ISBNLIB_MARC_MAP = {
 # Logger einrichten (Datei-basiert)
 logger = logging.getLogger("enrich_metadata")
 logger.setLevel(logging.INFO)
-_fh = logging.FileHandler("enrich_metadata.log", encoding="utf-8")
+_fh = logging.FileHandler("enrich_metadata.log", mode='w', encoding="utf-8")  # 'w' = überschreiben
 _fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s"))
 if not logger.handlers:
     logger.addHandler(_fh)
+
+# In-Memory-Cache für bereits abgefragte ISBNs
+isbn_cache = {}
 
 def is_abbreviation(value, full_value):
     """Prüft, ob value eine Abkürzung von full_value ist.
@@ -64,6 +69,40 @@ def is_abbreviation(value, full_value):
 def similarity(a, b):
     # Levenshtein-Ähnlichkeit
     return difflib.SequenceMatcher(None, a, b).ratio()
+
+def fetch_isbn_metadata(idx, isbn):
+    """Fragt Metadaten für eine ISBN ab (mit Retry und Caching)."""
+    norm13 = isbn
+    try:
+        norm = isbnlib.canonical(isbn) if hasattr(isbnlib, 'canonical') else isbn
+        if hasattr(isbnlib, 'to_isbn13'):
+            norm13 = isbnlib.to_isbn13(norm) or norm
+        else:
+            norm13 = norm
+    except Exception:
+        pass
+
+    # Cache prüfen
+    if norm13 in isbn_cache:
+        return idx, norm13, isbn_cache[norm13], None
+
+    meta = None
+    error_msg = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            meta = isbnlib.meta(norm13)
+            isbn_cache[norm13] = meta
+            time.sleep(RATE_LIMIT_SECONDS)
+            break
+        except (URLError, socket.timeout) as e:
+            wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+            error_msg = f"Netzwerkfehler (Versuch {attempt}/{MAX_RETRIES}): {e}"
+            time.sleep(wait)
+        except Exception as e:
+            error_msg = f"Fehler: {e}"
+            break
+
+    return idx, norm13, meta, error_msg
 
 def main(xml_path):
     # Einlesen der XML-Datei
@@ -100,46 +139,45 @@ def main(xml_path):
     print("Metadatenabfrage mit isbnlib...")
     change_log = []
     network_errors = 0
-    for idx, (record, isbn) in enumerate(isbn_records, 1):
-        # ISBN normalisieren (bevorzugt ISBN-13)
-        try:
-            norm = isbnlib.canonical(isbn) if hasattr(isbnlib, 'canonical') else isbn
-            if hasattr(isbnlib, 'to_isbn13'):
-                norm13 = isbnlib.to_isbn13(norm) or norm
+
+    # Parallele Abfrage mit ThreadPoolExecutor
+    try:
+        from tqdm import tqdm
+        use_tqdm = True
+    except ImportError:
+        use_tqdm = False
+        print("Hinweis: 'tqdm' nicht installiert. Für Fortschrittsbalken bitte 'pip install tqdm' ausführen.")
+
+    isbn_meta_map = {}  # idx -> (norm13, meta)
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {executor.submit(fetch_isbn_metadata, idx, isbn): idx for idx, (_, isbn) in enumerate(isbn_records, 1)}
+        iterator = as_completed(futures)
+        if use_tqdm:
+            iterator = tqdm(iterator, total=len(isbn_records), desc="ISBN-Metadaten abrufen")
+
+        for future in iterator:
+            idx, norm13, meta, error_msg = future.result()
+            if error_msg:
+                network_errors += 1
+                msg = f"[{idx}] {error_msg} (ISBN {norm13})"
+                if not use_tqdm:
+                    print(msg)
+                logger.warning(msg)
+            if not meta:
+                isbn_not_found += 1
+                msg = f"ISBN nicht gefunden: {norm13}"
+                if not use_tqdm:
+                    print(f"[{idx}] {msg}")
+                logger.warning(msg)
             else:
-                norm13 = norm
-        except Exception:
-            norm13 = isbn
+                isbn_meta_map[idx] = (norm13, meta)
 
-        meta = None
-        # Retry mit Exponential-Backoff
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                meta = isbnlib.meta(norm13)
-                break
-            except (URLError, socket.timeout) as e:
-                network_errors += 1
-                wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
-                msg = f"[{idx}] Netzwerkfehler bei ISBN {norm13} (Versuch {attempt}/{MAX_RETRIES}): {e}. Warte {wait:.2f}s"
-                print(msg)
-                logger.warning(msg)
-                time.sleep(wait)
-            except Exception as e:
-                # Andere Fehler von isbnlib (z.B. Service-spezifisch)
-                network_errors += 1
-                msg = f"[{idx}] Fehler bei ISBN {norm13}: {e}"
-                print(msg)
-                logger.warning(msg)
-                break
-
-        # Rate Limit (grundsätzlich zwischen Anfragen)
-        time.sleep(RATE_LIMIT_SECONDS)
-
-        if not meta:
-            isbn_not_found += 1
-            print(f"[{idx}] ISBN nicht gefunden: {norm13}")
-            logger.warning(f"ISBN nicht gefunden: {norm13}")
+    # Anreicherung durchführen
+    print("Anreicherung der Datensätze...")
+    for idx, (record, isbn) in enumerate(isbn_records, 1):
+        if idx not in isbn_meta_map:
             continue
+        norm13, meta = isbn_meta_map[idx]
 
         # 1) Felder ermitteln (erste Runde)
         fields_info = []  # (key, marc_tag, sub_code, marc_value, marc_subfield)
