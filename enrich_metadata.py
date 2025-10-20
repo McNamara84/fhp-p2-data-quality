@@ -29,7 +29,7 @@ ISBNLIB_MARC_MAP = {
     "Authors": ("100", "a"),
     "Publisher": ("260", "b"),
     "Year": ("260", "c"),
-    "Language": ("008", None),  # Sonderfall
+    # "Language": ("008", None),  # Sonderfall - deaktiviert für Statistik-Tracking
 }
 
 # Logger einrichten (Datei-basiert)
@@ -104,15 +104,6 @@ def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, us
     Returns:
         bool: True wenn Änderungen vorgenommen wurden, sonst False
     """
-    # field_stats initialisieren falls noch nicht vorhanden
-    if 'field_stats' not in stats:
-        stats['field_stats'] = {
-            'Title': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
-            'Authors': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
-            'Publisher': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
-            'Year': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
-        }
-    
     # 1) Felder ermitteln (erste Runde)
     fields_info = []  # (key, marc_tag, sub_code, marc_value, marc_subfield)
     for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
@@ -288,7 +279,49 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
         'isbn_not_found': 0,
         'conflicts_skipped': 0,
         'multi_isbn_warnings': 0,
-        'cancelled': False
+        'cancelled': False,
+        'field_stats': {
+            'Title': {
+                'total_records': 0,
+                'empty_before': 0, 
+                'filled_after': 0, 
+                'had_abbreviation': 0,
+                'abbreviation_replaced': 0, 
+                'potentially_incorrect': 0,
+                'corrected': 0, 
+                'conflicts': 0
+            },
+            'Authors': {
+                'total_records': 0,
+                'empty_before': 0, 
+                'filled_after': 0, 
+                'had_abbreviation': 0,
+                'abbreviation_replaced': 0, 
+                'potentially_incorrect': 0,
+                'corrected': 0, 
+                'conflicts': 0
+            },
+            'Publisher': {
+                'total_records': 0,
+                'empty_before': 0, 
+                'filled_after': 0, 
+                'had_abbreviation': 0,
+                'abbreviation_replaced': 0, 
+                'potentially_incorrect': 0,
+                'corrected': 0, 
+                'conflicts': 0
+            },
+            'Year': {
+                'total_records': 0,
+                'empty_before': 0, 
+                'filled_after': 0, 
+                'had_abbreviation': 0,
+                'abbreviation_replaced': 0, 
+                'potentially_incorrect': 0,
+                'corrected': 0, 
+                'conflicts': 0
+            },
+        }
     }
     
     # Einlesen der XML-Datei
@@ -321,6 +354,33 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
     print(f"{len(isbn_records)} Datensätze mit ISBN von {total_records} Datensätzen insgesamt eingelesen.")
     if stats['multi_isbn_warnings']:
         print(f"{stats['multi_isbn_warnings']} Datensätze mit mehreren ISBNs wurden übersprungen.")
+
+    # Pre-Enrichment Scan: Baseline-Statistiken erfassen
+    print("Pre-Enrichment Scan: Erfasse Baseline-Statistiken...")
+    for record, isbn in isbn_records:
+        for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
+            stats['field_stats'][key]['total_records'] += 1
+            
+            marc_value = None
+            for datafield in record.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    if sub_code:
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == sub_code:
+                                marc_value = subfield.text.strip() if subfield.text else ""
+                                break
+            
+            # Leer?
+            if not marc_value or marc_value == "":
+                stats['field_stats'][key]['empty_before'] += 1
+            else:
+                # Abkürzung? (z.B. "Max." oder sehr kurz)
+                if '.' in marc_value or len(marc_value) <= 3:
+                    stats['field_stats'][key]['had_abbreviation'] += 1
+                
+                # Potenziell fehlerhaft? (z.B. Jahr mit nur 2-3 Zeichen)
+                if key == 'Year' and len(marc_value) < 4:
+                    stats['field_stats'][key]['potentially_incorrect'] += 1
 
     print("Metadatenabfrage mit isbnlib...")
     change_log = []

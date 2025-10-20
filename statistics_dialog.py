@@ -51,17 +51,34 @@ class StatisticsDialog:
         canvas_frame = ttk.Frame(main_frame)
         canvas_frame.pack(fill=tk.BOTH, expand=True)
         
-        canvas = tk.Canvas(canvas_frame, bg="white")
+        canvas = tk.Canvas(canvas_frame, bg="#f5f5f5", highlightthickness=0)
         scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Canvas-Window mit expliziter Breite erstellen
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw", width=860)
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        def on_frame_configure(event):
+            # Scrollregion aktualisieren
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        def on_canvas_configure(event):
+            # Breite des scrollable_frame an Canvas-Breite anpassen
+            canvas.itemconfig(canvas_window, width=event.width)
+        
+        scrollable_frame.bind("<Configure>", on_frame_configure)
+        canvas.bind("<Configure>", on_canvas_configure)
+        
         canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Mausrad-Scrolling aktivieren
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+        
+        # Unbind beim Schließen des Dialogs
+        self.dialog.protocol("WM_DELETE_WINDOW", lambda: (canvas.unbind_all("<MouseWheel>"), self.dialog.destroy()))
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -139,67 +156,186 @@ class StatisticsDialog:
     
     def _create_field_card(self, parent: ttk.Frame, field_key: str, display_name: str, field_data: Dict[str, int]):
         """Erstellt eine Karte für ein einzelnes Feld mit Vorher-Nachher-Visualisierung."""
-        card_frame = ttk.LabelFrame(parent, text=display_name, padding="10")
+        card_frame = ttk.LabelFrame(parent, text=display_name, padding="15")
         card_frame.pack(fill=tk.X, pady=(0, 15))
         
-        # Obere Zeile: Gesamt-Änderungen
-        total_changes = (
-            field_data.get('filled_after', 0) +
-            field_data.get('abbreviation_replaced', 0) +
-            field_data.get('corrected', 0)
-        )
+        total_records = field_data.get('total_records', 0)
         
-        summary_label = ttk.Label(
+        # Obere Zeile: Gesamt-Info
+        summary_frame = ttk.Frame(card_frame)
+        summary_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        ttk.Label(
+            summary_frame,
+            text=f"Gesamt-Records mit diesem Feld: {total_records}",
+            font=("Segoe UI", 10, "bold")
+        ).pack(anchor="w")
+        
+        # --- Sektion 1: Leere Felder ---
+        self._create_comparison_section(
             card_frame,
-            text=f"Gesamt-Änderungen: {total_changes}",
-            font=("Segoe UI", 11, "bold")
+            "📄 Leere Felder",
+            field_data.get('empty_before', 0),
+            field_data.get('filled_after', 0),
+            total_records,
+            "Waren leer",
+            "Wurden befüllt",
+            "Verbleiben leer"
         )
-        summary_label.pack(anchor="w", pady=(0, 10))
         
-        # Grid für die einzelnen Metriken
-        metrics_frame = ttk.Frame(card_frame)
-        metrics_frame.pack(fill=tk.X)
+        # --- Sektion 2: Abkürzungen ---
+        self._create_comparison_section(
+            card_frame,
+            "📝 Abkürzungen",
+            field_data.get('had_abbreviation', 0),
+            field_data.get('abbreviation_replaced', 0),
+            total_records,
+            "Enthielten Abkürzung",
+            "Wurden ausgeschrieben",
+            "Verbleiben abgekürzt"
+        )
         
-        # Spalten-Header
-        header_frame = ttk.Frame(metrics_frame)
-        header_frame.pack(fill=tk.X, pady=(0, 5))
+        # --- Sektion 3: Fehlerhafte Einträge ---
+        if field_key == 'Year':  # Nur für Jahr relevant
+            self._create_comparison_section(
+                card_frame,
+                "🔧 Fehlerhafte Einträge",
+                field_data.get('potentially_incorrect', 0),
+                field_data.get('corrected', 0),
+                total_records,
+                "Potenziell fehlerhaft",
+                "Wurden korrigiert",
+                "Verbleiben fehlerhaft"
+            )
         
-        ttk.Label(header_frame, text="Änderungs-Typ", font=("Segoe UI", 9, "bold"), width=25).pack(side=tk.LEFT)
-        ttk.Label(header_frame, text="Anzahl", font=("Segoe UI", 9, "bold"), width=10).pack(side=tk.LEFT)
-        ttk.Label(header_frame, text="Visualisierung", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # --- Sektion 4: Konflikte ---
+        conflicts = field_data.get('conflicts', 0)
+        if conflicts > 0:
+            conflict_frame = ttk.Frame(card_frame)
+            conflict_frame.pack(fill=tk.X, pady=(10, 0))
+            
+            ttk.Label(
+                conflict_frame,
+                text=f"⚠️ Konflikte: {conflicts}",
+                font=("Segoe UI", 9),
+                foreground="red"
+            ).pack(anchor="w")
+            
+            ttk.Label(
+                conflict_frame,
+                text="(Datensätze mit zu großen Abweichungen zwischen Quelle und API)",
+                font=("Segoe UI", 8),
+                foreground="gray"
+            ).pack(anchor="w", padx=(20, 0))
+    
+    def _create_comparison_section(self, parent: ttk.Frame, title: str, 
+                                   before_count: int, improved_count: int, total: int,
+                                   before_label: str, improved_label: str, remaining_label: str):
+        """Erstellt eine Vorher-Nachher-Vergleichs-Sektion."""
+        section_frame = ttk.LabelFrame(parent, text=title, padding="10")
+        section_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Einzelne Metriken
-        self._add_metric_row(metrics_frame, "✅ Leere Felder befüllt", field_data.get('filled_after', 0), total_changes, "green")
-        self._add_metric_row(metrics_frame, "📝 Abkürzungen ersetzt", field_data.get('abbreviation_replaced', 0), total_changes, "blue")
-        self._add_metric_row(metrics_frame, "🔧 Fehler korrigiert", field_data.get('corrected', 0), total_changes, "orange")
-        self._add_metric_row(metrics_frame, "⚠️ Konflikte", field_data.get('conflicts', 0), total_changes, "red")
+        remaining_count = before_count - improved_count
         
-    def _add_metric_row(self, parent: ttk.Frame, label: str, value: int, total: int, color: str):
-        """Fügt eine Metrik-Zeile mit Balkendiagramm hinzu."""
+        # Zwei-Spalten-Layout
+        columns_frame = ttk.Frame(section_frame)
+        columns_frame.pack(fill=tk.X)
+        
+        # Linke Spalte: Vorher-Zustand
+        left_col = ttk.Frame(columns_frame)
+        left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
+        ttk.Label(
+            left_col,
+            text="Vorher:",
+            font=("Segoe UI", 9, "bold"),
+            foreground="#d32f2f"  # Rot
+        ).pack(anchor="w", pady=(0, 5))
+        
+        self._create_stat_bar(
+            left_col,
+            before_label,
+            before_count,
+            total,
+            "#ef5350"  # Helles Rot
+        )
+        
+        # Rechte Spalte: Nachher-Zustand
+        right_col = ttk.Frame(columns_frame)
+        right_col.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        
+        ttk.Label(
+            right_col,
+            text="Nachher:",
+            font=("Segoe UI", 9, "bold"),
+            foreground="#388e3c"  # Grün
+        ).pack(anchor="w", pady=(0, 5))
+        
+        self._create_stat_bar(
+            right_col,
+            improved_label,
+            improved_count,
+            total,
+            "#66bb6a"  # Helles Grün
+        )
+        
+        self._create_stat_bar(
+            right_col,
+            remaining_label,
+            remaining_count,
+            total,
+            "#ffb74d"  # Orange
+        )
+        
+        # Verbesserungsrate berechnen und anzeigen
+        if before_count > 0:
+            improvement_rate = (improved_count / before_count) * 100
+            
+            rate_frame = ttk.Frame(section_frame)
+            rate_frame.pack(fill=tk.X, pady=(10, 0))
+            
+            rate_color = "#388e3c" if improvement_rate >= 70 else "#ff9800" if improvement_rate >= 40 else "#d32f2f"
+            
+            ttk.Label(
+                rate_frame,
+                text=f"✓ Verbesserungsrate: {improvement_rate:.1f}% ({improved_count} von {before_count})",
+                font=("Segoe UI", 9, "bold"),
+                foreground=rate_color
+            ).pack(anchor="w")
+    
+    def _create_stat_bar(self, parent: ttk.Frame, label: str, value: int, total: int, color: str):
+        """Erstellt einen Statistik-Balken mit Label."""
         row_frame = ttk.Frame(parent)
-        row_frame.pack(fill=tk.X, pady=3)
+        row_frame.pack(fill=tk.X, pady=2)
         
-        # Label
-        label_widget = ttk.Label(row_frame, text=label, width=25)
-        label_widget.pack(side=tk.LEFT)
+        # Label + Wert
+        label_frame = ttk.Frame(row_frame)
+        label_frame.pack(fill=tk.X, pady=(0, 3))
         
-        # Wert
-        value_label = ttk.Label(row_frame, text=str(value), width=10, font=("Segoe UI", 9, "bold"))
-        value_label.pack(side=tk.LEFT)
+        ttk.Label(
+            label_frame,
+            text=label,
+            font=("Segoe UI", 9)
+        ).pack(side=tk.LEFT)
         
-        # Balken-Container
-        bar_container = tk.Frame(row_frame, height=20, bg="lightgray", relief=tk.SUNKEN)
-        bar_container.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 0))
+        ttk.Label(
+            label_frame,
+            text=f"{value}",
+            font=("Segoe UI", 9, "bold")
+        ).pack(side=tk.RIGHT)
         
-        # Balken (proportional)
-        if total > 0:
-            bar_width = (value / total) if total > 0 else 0
-            bar = tk.Frame(bar_container, bg=color, height=20)
+        # Balken
+        bar_container = tk.Frame(row_frame, height=18, bg="lightgray", relief=tk.SUNKEN, bd=1)
+        bar_container.pack(fill=tk.X)
+        
+        if total > 0 and value > 0:
+            bar_width = value / total
+            bar = tk.Frame(bar_container, bg=color, height=18)
             bar.place(x=0, y=0, relwidth=bar_width, relheight=1.0)
             
-            # Prozent-Label im Balken (wenn Platz ist)
-            if bar_width > 0.1:
-                percent = (value / total * 100) if total > 0 else 0
+            # Prozent-Label
+            if bar_width > 0.15:  # Nur wenn genug Platz
+                percent = (value / total * 100)
                 percent_label = tk.Label(
                     bar,
                     text=f"{percent:.1f}%",
