@@ -138,20 +138,42 @@ def fetch_isbn_metadata(idx, isbn):
 
     return idx, norm13, meta, error_msg
 
-def main(xml_path):
+def main(xml_path, progress_callback=None, check_cancelled=None):
+    """
+    Hauptfunktion für die Metadaten-Anreicherung.
+    
+    Args:
+        xml_path: Pfad zur XML-Datei
+        progress_callback: Optional callback(processed, successful, failed, rate_limit_retries, isbn_not_found, conflicts_skipped)
+        check_cancelled: Optional callback() -> bool für Abbruchprüfung
+        
+    Returns:
+        dict mit Statistiken oder None bei Fehler
+    """
+    # Statistiken initialisieren
+    stats = {
+        'total_records': 0,
+        'processed_records': 0,
+        'successful_enrichments': 0,
+        'failed_enrichments': 0,
+        'rate_limit_retries': 0,
+        'isbn_not_found': 0,
+        'conflicts_skipped': 0,
+        'multi_isbn_warnings': 0,
+        'cancelled': False
+    }
+    
     # Einlesen der XML-Datei
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
     except Exception as e:
         print(f"Fehler beim Einlesen der Datei: {e}")
-        sys.exit(1)
+        return None
 
     records = root.findall("record")
     total_records = len(records)
     isbn_records = []
-    multi_isbn_warnings = 0
-    isbn_not_found = 0
 
     for record in records:
         isbns = []
@@ -163,24 +185,26 @@ def main(xml_path):
         if len(isbns) == 1:
             isbn_records.append((record, isbns[0]))
         elif len(isbns) > 1:
-            multi_isbn_warnings += 1
+            stats['multi_isbn_warnings'] += 1
             print(f"Warnung: Datensatz mit mehreren ISBNs gefunden (IDs: {[cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001']}) - übersprungen.")
 
+    stats['total_records'] = len(isbn_records)
+    
     print(f"{len(isbn_records)} Datensätze mit ISBN von {total_records} Datensätzen insgesamt eingelesen.")
-    if multi_isbn_warnings:
-        print(f"{multi_isbn_warnings} Datensätze mit mehreren ISBNs wurden übersprungen.")
+    if stats['multi_isbn_warnings']:
+        print(f"{stats['multi_isbn_warnings']} Datensätze mit mehreren ISBNs wurden übersprungen.")
 
     print("Metadatenabfrage mit isbnlib...")
     change_log = []
-    network_errors = 0
 
     # Parallele Abfrage mit ThreadPoolExecutor
     try:
         from tqdm import tqdm
-        use_tqdm = True
+        use_tqdm = True and not progress_callback  # tqdm nur wenn kein GUI-Callback
     except ImportError:
         use_tqdm = False
-        print("Hinweis: 'tqdm' nicht installiert. Für Fortschrittsbalken bitte 'pip install tqdm' ausführen.")
+        if not progress_callback:
+            print("Hinweis: 'tqdm' nicht installiert. Für Fortschrittsbalken bitte 'pip install tqdm' ausführen.")
 
     isbn_meta_map = {}  # idx -> (norm13, meta)
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -190,25 +214,53 @@ def main(xml_path):
             iterator = tqdm(iterator, total=len(isbn_records), desc="ISBN-Metadaten abrufen")
 
         for future in iterator:
+            # Abbruchprüfung
+            if check_cancelled and check_cancelled():
+                stats['cancelled'] = True
+                print("\nAnreicherung vom Benutzer abgebrochen.")
+                return stats
+            
             idx, norm13, meta, error_msg = future.result()
+            stats['processed_records'] = idx
+            
             if error_msg:
-                network_errors += 1
+                if "429" in error_msg:
+                    stats['rate_limit_retries'] += 1
+                else:
+                    stats['failed_enrichments'] += 1
                 msg = f"[{idx}] {error_msg} (ISBN {norm13})"
-                if not use_tqdm:
+                if not use_tqdm and not progress_callback:
                     print(msg)
                 logger.warning(msg)
             if not meta:
-                isbn_not_found += 1
+                stats['isbn_not_found'] += 1
                 msg = f"ISBN nicht gefunden: {norm13}"
-                if not use_tqdm:
+                if not use_tqdm and not progress_callback:
                     print(f"[{idx}] {msg}")
                 logger.warning(msg)
             else:
                 isbn_meta_map[idx] = (norm13, meta)
+            
+            # GUI-Update
+            if progress_callback:
+                progress_callback(
+                    stats['processed_records'],
+                    stats['successful_enrichments'],
+                    stats['failed_enrichments'],
+                    stats['rate_limit_retries'],
+                    stats['isbn_not_found'],
+                    stats['conflicts_skipped']
+                )
 
     # Anreicherung durchführen
     print("Anreicherung der Datensätze...")
     for idx, (record, isbn) in enumerate(isbn_records, 1):
+        # Abbruchprüfung
+        if check_cancelled and check_cancelled():
+            stats['cancelled'] = True
+            print("\nAnreicherung vom Benutzer abgebrochen.")
+            return stats
+        
         if idx not in isbn_meta_map:
             continue
         norm13, meta = isbn_meta_map[idx]
@@ -258,11 +310,14 @@ def main(xml_path):
         if comparable > 0 and conflicts > (comparable / 2):
             rec_id = next((cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001'), 'unbekannt')
             msg = f"[{idx}] Konfliktquote zu hoch (Konflikte: {conflicts}/{comparable}) für Record {rec_id} (ISBN {isbn}) – Datensatz übersprungen."
-            print(msg)
+            if not progress_callback:
+                print(msg)
             logger.warning(msg)
+            stats['conflicts_skipped'] += 1
             continue
 
         # 3) Mapping anwenden (zweite Runde)
+        has_changes = False
         for key, marc_tag, sub_code, marc_value, marc_subfield in fields_info:
             meta_value = meta.get(key)
             if key == "Authors" and isinstance(meta_value, list):
@@ -279,6 +334,7 @@ def main(xml_path):
                     msg = f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'"
                     change_log.append(msg)
                     logger.info(msg)
+                    has_changes = True
             # Abkürzung erkennen und ersetzen
             elif marc_value and is_abbreviation(str(marc_value), str(meta_value)):
                 if sub_code and (marc_subfield is not None):
@@ -286,6 +342,7 @@ def main(xml_path):
                     msg = f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'"
                     change_log.append(msg)
                     logger.info(msg)
+                    has_changes = True
             # Falsch befülltes Feld korrigieren
             else:
                 if marc_value:
@@ -296,11 +353,27 @@ def main(xml_path):
                             msg = f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {sim:.2f})"
                             change_log.append(msg)
                             logger.info(msg)
+                            has_changes = True
+        
+        if has_changes:
+            stats['successful_enrichments'] += 1
 
-    print(f"{isbn_not_found} von {len(isbn_records)} ISBNs konnten nicht angereichert werden.")
-    print("Protokoll der Änderungen:")
+    # Zusammenfassung
+    stats['change_log'] = change_log
+    stats['tree'] = tree  # XML-Tree für Export zurückgeben
+    
+    print("\n=== Zusammenfassung ===")
+    print(f"Verarbeitete Records: {stats['processed_records']}")
+    print(f"Erfolgreiche Anreicherungen: {stats['successful_enrichments']}")
+    print(f"Fehler: {stats['failed_enrichments']}")
+    print(f"Rate-Limit Retries: {stats['rate_limit_retries']}")
+    print(f"ISBN nicht gefunden: {stats['isbn_not_found']}")
+    print(f"Konflikte übersprungen: {stats['conflicts_skipped']}")
+    print("\nProtokoll der Änderungen:")
     for entry in change_log:
         print(entry)
+    
+    return stats
 
 if __name__ == "__main__":
     # Standarddatei, kann später per Argument angepasst werden
@@ -310,4 +383,12 @@ if __name__ == "__main__":
     if not os.path.exists(xml_path):
         print(f"Datei nicht gefunden: {xml_path}")
         sys.exit(1)
-    main(xml_path)
+    
+    result = main(xml_path)
+    if result and not result.get('cancelled'):
+        # Optional: XML speichern
+        output_path = xml_path.replace(".xml", "_enriched.xml")
+        if result.get('tree'):
+            result['tree'].write(output_path, encoding='utf-8', xml_declaration=True)
+            print(f"\nAngereicherte Datei gespeichert: {output_path}")
+    sys.exit(0 if result else 1)
