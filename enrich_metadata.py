@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import socket
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.error import URLError
 try:
@@ -17,7 +18,7 @@ except ImportError:
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
 CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
-RATE_LIMIT_SECONDS = 0.2  # Wartezeit zwischen isbnlib-Anfragen (erhöht wegen Rate-Limiting)
+RATE_LIMIT_SECONDS = 0.10  # Globale Mindestzeit zwischen ANY zwei Anfragen (threadsicher)
 MAX_RETRIES = 3
 BACKOFF_BASE_SECONDS = 2.0  # Längerer Backoff bei 429-Fehlern
 MAX_WORKERS = 4  # Reduziert auf 4 parallele Threads, um API-Limits zu respektieren
@@ -41,6 +42,32 @@ if not logger.handlers:
 
 # In-Memory-Cache für bereits abgefragte ISBNs
 isbn_cache = {}
+
+# Globaler, threadsicherer Rate-Limiter (Token-ähnlich)
+_rate_lock = threading.Lock()
+_next_allowed_time = 0.0  # monotonic Zeit
+
+def _acquire_rate_slot():
+    """Stellt sicher, dass zwischen zwei beliebigen Requests mindestens
+    RATE_LIMIT_SECONDS liegen (global über alle Threads).
+    """
+    global _next_allowed_time
+    with _rate_lock:
+        now = time.monotonic()
+        wait = max(0.0, _next_allowed_time - now)
+        if wait > 0:
+            # Warten außerhalb des Locks verhindert Head-of-line-Blocking anderer Threads
+            pass
+        else:
+            # Slot ist sofort verfügbar
+            _next_allowed_time = now + RATE_LIMIT_SECONDS
+            return
+    # Außerhalb des Locks schlafen und danach Slot finalisieren
+    if wait > 0:
+        time.sleep(wait)
+    with _rate_lock:
+        now2 = time.monotonic()
+        _next_allowed_time = max(_next_allowed_time, now2 + RATE_LIMIT_SECONDS)
 
 def is_abbreviation(value, full_value):
     """Prüft, ob value eine Abkürzung von full_value ist.
@@ -90,9 +117,10 @@ def fetch_isbn_metadata(idx, isbn):
     error_msg = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
+            # Globalen Rate-Limiter respektieren (vor JEDEM Versuch)
+            _acquire_rate_slot()
             meta = isbnlib.meta(norm13)
             isbn_cache[norm13] = meta
-            time.sleep(RATE_LIMIT_SECONDS)
             break
         except (URLError, socket.timeout) as e:
             wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
