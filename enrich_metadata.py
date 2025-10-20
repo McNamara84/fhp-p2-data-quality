@@ -97,6 +97,129 @@ def similarity(a, b):
     # Levenshtein-Ähnlichkeit
     return difflib.SequenceMatcher(None, a, b).ratio()
 
+def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, use_tqdm, progress_callback):
+    """
+    Reichert einen einzelnen Record mit ISBN-Metadaten an.
+    
+    Returns:
+        bool: True wenn Änderungen vorgenommen wurden, sonst False
+    """
+    # field_stats initialisieren falls noch nicht vorhanden
+    if 'field_stats' not in stats:
+        stats['field_stats'] = {
+            'Title': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
+            'Authors': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
+            'Publisher': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
+            'Year': {'empty_before': 0, 'filled_after': 0, 'abbreviation_replaced': 0, 'corrected': 0, 'conflicts': 0},
+        }
+    
+    # 1) Felder ermitteln (erste Runde)
+    fields_info = []  # (key, marc_tag, sub_code, marc_value, marc_subfield)
+    for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
+        marc_value = None
+        marc_subfield = None
+        for datafield in record.findall("datafield"):
+            if datafield.get("tag") == marc_tag:
+                if sub_code:
+                    for subfield in datafield.findall("subfield"):
+                        if subfield.get("code") == sub_code:
+                            marc_value = subfield.text.strip() if subfield.text else ""
+                            marc_subfield = subfield
+                            break
+                else:
+                    marc_value = None  # Sonderfall
+        fields_info.append((key, marc_tag, sub_code, marc_value, marc_subfield))
+
+    # 2) Konfliktquote prüfen
+    comparable = 0
+    conflicts = 0
+    for key, marc_tag, sub_code, marc_value, _ in fields_info:
+        meta_value = meta.get(key)
+        if key == "Authors" and isinstance(meta_value, list):
+            meta_value = ", ".join(meta_value)
+        if meta_value is None or str(meta_value).strip() == "":
+            continue
+        if marc_value is None or str(marc_value).strip() == "":
+            continue
+        # identische Werte sind kein Konflikt
+        if str(marc_value).strip().lower() == str(meta_value).strip().lower():
+            comparable += 1
+            continue
+        # Abkürzungen sind kein Konflikt
+        if is_abbreviation(str(marc_value), str(meta_value)):
+            comparable += 1
+            continue
+        # Ähnlichkeit bewerten
+        sim = similarity(str(marc_value), str(meta_value))
+        comparable += 1
+        if sim < CONFLICT_SIMILARITY_THRESHOLD:
+            conflicts += 1
+
+    if comparable > 0 and conflicts > (comparable / 2):
+        rec_id = next((cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001'), 'unbekannt')
+        msg = f"[{idx}] Konfliktquote zu hoch (Konflikte: {conflicts}/{comparable}) für Record {rec_id} (ISBN {isbn}) – Datensatz übersprungen."
+        if not use_tqdm and not progress_callback:
+            print(msg)
+        logger.warning(msg)
+        stats['conflicts_skipped'] += 1
+        
+        # Konflikt-Statistik pro Feld erhöhen
+        for key, marc_tag, sub_code, marc_value, _ in fields_info:
+            meta_value = meta.get(key)
+            if key == "Authors" and isinstance(meta_value, list):
+                meta_value = ", ".join(meta_value)
+            if meta_value and marc_value:
+                if str(marc_value).strip().lower() != str(meta_value).strip().lower():
+                    stats['field_stats'][key]['conflicts'] += 1
+        
+        return False
+
+    # 3) Mapping anwenden (zweite Runde)
+    has_changes = False
+    for key, marc_tag, sub_code, marc_value, marc_subfield in fields_info:
+        meta_value = meta.get(key)
+        if key == "Authors" and isinstance(meta_value, list):
+            meta_value = ", ".join(meta_value)
+        if not meta_value:
+            continue
+        # Keine Aktion wenn identisch
+        if marc_value is not None and str(marc_value).strip() == str(meta_value).strip():
+            continue
+        # Leeres Feld befüllen
+        if (marc_value is None or marc_value == "") and meta_value:
+            if sub_code and (marc_subfield is not None):
+                stats['field_stats'][key]['empty_before'] += 1
+                stats['field_stats'][key]['filled_after'] += 1
+                marc_subfield.text = meta_value
+                msg = f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'"
+                change_log.append(msg)
+                logger.info(msg)
+                has_changes = True
+        # Abkürzung erkennen und ersetzen
+        elif marc_value and is_abbreviation(str(marc_value), str(meta_value)):
+            if sub_code and (marc_subfield is not None):
+                stats['field_stats'][key]['abbreviation_replaced'] += 1
+                marc_subfield.text = meta_value
+                msg = f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'"
+                change_log.append(msg)
+                logger.info(msg)
+                has_changes = True
+        # Falsch befülltes Feld korrigieren
+        else:
+            if marc_value:
+                sim = similarity(str(marc_value), str(meta_value))
+                if sim < LEVENSHTEIN_THRESHOLD and sim > CONFIDENCE_THRESHOLD:
+                    if sub_code and (marc_subfield is not None):
+                        stats['field_stats'][key]['corrected'] += 1
+                        marc_subfield.text = meta_value
+                        msg = f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {sim:.2f})"
+                        change_log.append(msg)
+                        logger.info(msg)
+                        has_changes = True
+    
+    return has_changes
+
+
 def fetch_isbn_metadata(idx, isbn):
     """Fragt Metadaten für eine ISBN ab (mit Retry und Caching)."""
     norm13 = isbn
@@ -111,10 +234,11 @@ def fetch_isbn_metadata(idx, isbn):
 
     # Cache prüfen
     if norm13 in isbn_cache:
-        return idx, norm13, isbn_cache[norm13], None
+        return idx, norm13, isbn_cache[norm13], None, 0
 
     meta = None
     error_msg = None
+    retry_attempt = 0  # Welcher Retry-Versuch war erfolgreich (0 = erster Versuch erfolgreich, 1-3 = welcher Retry)
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             # Globalen Rate-Limiter respektieren (vor JEDEM Versuch)
@@ -123,12 +247,14 @@ def fetch_isbn_metadata(idx, isbn):
             isbn_cache[norm13] = meta
             break
         except (URLError, socket.timeout) as e:
+            retry_attempt = attempt  # Markiere, dass ein Retry nötig war
             wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
             error_msg = f"Netzwerkfehler (Versuch {attempt}/{MAX_RETRIES}): {e}"
             time.sleep(wait)
         except Exception as e:
             # Bei 429 (Rate Limit) längere Wartezeit
             if "429" in str(e) or "many requests" in str(e).lower():
+                retry_attempt = attempt  # Markiere, dass ein Retry nötig war
                 wait = BACKOFF_BASE_SECONDS * (3 ** attempt)  # Exponentiell länger
                 error_msg = f"Rate Limit (429) erreicht (Versuch {attempt}/{MAX_RETRIES})"
                 time.sleep(wait)
@@ -136,7 +262,7 @@ def fetch_isbn_metadata(idx, isbn):
                 error_msg = f"Fehler: {e}"
                 break
 
-    return idx, norm13, meta, error_msg
+    return idx, norm13, meta, error_msg, retry_attempt
 
 def main(xml_path, progress_callback=None, check_cancelled=None):
     """
@@ -156,7 +282,9 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
         'processed_records': 0,
         'successful_enrichments': 0,
         'failed_enrichments': 0,
-        'rate_limit_retries': 0,
+        'rate_limit_retry_1': 0,  # Retries beim 1. Versuch
+        'rate_limit_retry_2': 0,  # Retries beim 2. Versuch
+        'rate_limit_retry_3': 0,  # Retries beim 3. Versuch
         'isbn_not_found': 0,
         'conflicts_skipped': 0,
         'multi_isbn_warnings': 0,
@@ -206,12 +334,15 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
         if not progress_callback:
             print("Hinweis: 'tqdm' nicht installiert. Für Fortschrittsbalken bitte 'pip install tqdm' ausführen.")
 
+    # Pipeline-Ansatz: ISBN-Abfrage und Anreicherung verzahnt
     isbn_meta_map = {}  # idx -> (norm13, meta)
+    record_map = {idx: (record, isbn) for idx, (record, isbn) in enumerate(isbn_records, 1)}  # idx -> (record, isbn)
+    
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(fetch_isbn_metadata, idx, isbn): idx for idx, (_, isbn) in enumerate(isbn_records, 1)}
         iterator = as_completed(futures)
         if use_tqdm:
-            iterator = tqdm(iterator, total=len(isbn_records), desc="ISBN-Metadaten abrufen")
+            iterator = tqdm(iterator, total=len(isbn_records), desc="ISBN-Metadaten abrufen & anreichern")
 
         for future in iterator:
             # Abbruchprüfung
@@ -220,18 +351,26 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
                 print("\nAnreicherung vom Benutzer abgebrochen.")
                 return stats
             
-            idx, norm13, meta, error_msg = future.result()
+            idx, norm13, meta, error_msg, retry_attempt = future.result()
             stats['processed_records'] = idx
             
+            # Retry-Statistik tracken (retry_attempt ist 0 wenn erfolgreich beim ersten Versuch, 1-3 wenn Retry nötig war)
+            if retry_attempt > 0:
+                if retry_attempt == 1:
+                    stats['rate_limit_retry_1'] += 1
+                elif retry_attempt == 2:
+                    stats['rate_limit_retry_2'] += 1
+                elif retry_attempt == 3:
+                    stats['rate_limit_retry_3'] += 1
+            
             if error_msg:
-                if "429" in error_msg:
-                    stats['rate_limit_retries'] += 1
-                else:
+                if "429" not in error_msg:  # Nur echte Fehler zählen (429 ist schon über Retry getrackt)
                     stats['failed_enrichments'] += 1
                 msg = f"[{idx}] {error_msg} (ISBN {norm13})"
                 if not use_tqdm and not progress_callback:
                     print(msg)
                 logger.warning(msg)
+            
             if not meta:
                 stats['isbn_not_found'] += 1
                 msg = f"ISBN nicht gefunden: {norm13}"
@@ -240,6 +379,16 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
                 logger.warning(msg)
             else:
                 isbn_meta_map[idx] = (norm13, meta)
+                
+                # Anreicherung DIREKT nach erfolgreicher ISBN-Abfrage durchführen
+                record, isbn = record_map[idx]
+                has_changes = _enrich_single_record(
+                    idx, record, isbn, norm13, meta, 
+                    stats, change_log, 
+                    use_tqdm, progress_callback
+                )
+                if has_changes:
+                    stats['successful_enrichments'] += 1
             
             # GUI-Update
             if progress_callback:
@@ -247,116 +396,12 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
                     stats['processed_records'],
                     stats['successful_enrichments'],
                     stats['failed_enrichments'],
-                    stats['rate_limit_retries'],
+                    stats['rate_limit_retry_1'],
+                    stats['rate_limit_retry_2'],
+                    stats['rate_limit_retry_3'],
                     stats['isbn_not_found'],
                     stats['conflicts_skipped']
                 )
-
-    # Anreicherung durchführen
-    print("Anreicherung der Datensätze...")
-    for idx, (record, isbn) in enumerate(isbn_records, 1):
-        # Abbruchprüfung
-        if check_cancelled and check_cancelled():
-            stats['cancelled'] = True
-            print("\nAnreicherung vom Benutzer abgebrochen.")
-            return stats
-        
-        if idx not in isbn_meta_map:
-            continue
-        norm13, meta = isbn_meta_map[idx]
-
-        # 1) Felder ermitteln (erste Runde)
-        fields_info = []  # (key, marc_tag, sub_code, marc_value, marc_subfield)
-        for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
-            marc_value = None
-            marc_subfield = None
-            for datafield in record.findall("datafield"):
-                if datafield.get("tag") == marc_tag:
-                    if sub_code:
-                        for subfield in datafield.findall("subfield"):
-                            if subfield.get("code") == sub_code:
-                                marc_value = subfield.text.strip() if subfield.text else ""
-                                marc_subfield = subfield
-                                break
-                    else:
-                        marc_value = None  # Sonderfall
-            fields_info.append((key, marc_tag, sub_code, marc_value, marc_subfield))
-
-        # 2) Konfliktquote prüfen
-        comparable = 0
-        conflicts = 0
-        for key, marc_tag, sub_code, marc_value, _ in fields_info:
-            meta_value = meta.get(key)
-            if key == "Authors" and isinstance(meta_value, list):
-                meta_value = ", ".join(meta_value)
-            if meta_value is None or str(meta_value).strip() == "":
-                continue
-            if marc_value is None or str(marc_value).strip() == "":
-                continue
-            # identische Werte sind kein Konflikt
-            if str(marc_value).strip().lower() == str(meta_value).strip().lower():
-                comparable += 1
-                continue
-            # Abkürzungen sind kein Konflikt
-            if is_abbreviation(str(marc_value), str(meta_value)):
-                comparable += 1
-                continue
-            # Ähnlichkeit bewerten
-            sim = similarity(str(marc_value), str(meta_value))
-            comparable += 1
-            if sim < CONFLICT_SIMILARITY_THRESHOLD:
-                conflicts += 1
-
-        if comparable > 0 and conflicts > (comparable / 2):
-            rec_id = next((cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001'), 'unbekannt')
-            msg = f"[{idx}] Konfliktquote zu hoch (Konflikte: {conflicts}/{comparable}) für Record {rec_id} (ISBN {isbn}) – Datensatz übersprungen."
-            if not progress_callback:
-                print(msg)
-            logger.warning(msg)
-            stats['conflicts_skipped'] += 1
-            continue
-
-        # 3) Mapping anwenden (zweite Runde)
-        has_changes = False
-        for key, marc_tag, sub_code, marc_value, marc_subfield in fields_info:
-            meta_value = meta.get(key)
-            if key == "Authors" and isinstance(meta_value, list):
-                meta_value = ", ".join(meta_value)
-            if not meta_value:
-                continue
-            # Keine Aktion wenn identisch
-            if marc_value is not None and str(marc_value).strip() == str(meta_value).strip():
-                continue
-            # Leeres Feld befüllen
-            if (marc_value is None or marc_value == "") and meta_value:
-                if sub_code and (marc_subfield is not None):
-                    marc_subfield.text = meta_value
-                    msg = f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'"
-                    change_log.append(msg)
-                    logger.info(msg)
-                    has_changes = True
-            # Abkürzung erkennen und ersetzen
-            elif marc_value and is_abbreviation(str(marc_value), str(meta_value)):
-                if sub_code and (marc_subfield is not None):
-                    marc_subfield.text = meta_value
-                    msg = f"[{idx}] {key}: Abkürzung '{marc_value}' ersetzt durch '{meta_value}'"
-                    change_log.append(msg)
-                    logger.info(msg)
-                    has_changes = True
-            # Falsch befülltes Feld korrigieren
-            else:
-                if marc_value:
-                    sim = similarity(str(marc_value), str(meta_value))
-                    if sim < LEVENSHTEIN_THRESHOLD and sim > CONFIDENCE_THRESHOLD:
-                        if sub_code and (marc_subfield is not None):
-                            marc_subfield.text = meta_value
-                            msg = f"[{idx}] {key}: Wert '{marc_value}' korrigiert zu '{meta_value}' (Ähnlichkeit: {sim:.2f})"
-                            change_log.append(msg)
-                            logger.info(msg)
-                            has_changes = True
-        
-        if has_changes:
-            stats['successful_enrichments'] += 1
 
     # Zusammenfassung
     stats['change_log'] = change_log
@@ -366,7 +411,9 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
     print(f"Verarbeitete Records: {stats['processed_records']}")
     print(f"Erfolgreiche Anreicherungen: {stats['successful_enrichments']}")
     print(f"Fehler: {stats['failed_enrichments']}")
-    print(f"Rate-Limit Retries: {stats['rate_limit_retries']}")
+    print(f"Rate-Limit Retries (1/3): {stats['rate_limit_retry_1']}")
+    print(f"Rate-Limit Retries (2/3): {stats['rate_limit_retry_2']}")
+    print(f"Rate-Limit Retries (3/3): {stats['rate_limit_retry_3']}")
     print(f"ISBN nicht gefunden: {stats['isbn_not_found']}")
     print(f"Konflikte übersprungen: {stats['conflicts_skipped']}")
     print("\nProtokoll der Änderungen:")

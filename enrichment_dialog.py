@@ -16,7 +16,9 @@ class EnrichmentStats:
     processed_records: int = 0
     successful_enrichments: int = 0
     failed_enrichments: int = 0
-    rate_limit_retries: int = 0
+    rate_limit_retry_1: int = 0  # Retries beim 1. Versuch
+    rate_limit_retry_2: int = 0  # Retries beim 2. Versuch
+    rate_limit_retry_3: int = 0  # Retries beim 3. Versuch
     isbn_not_found: int = 0
     conflicts_skipped: int = 0
     start_time: float = 0.0
@@ -130,12 +132,14 @@ class EnrichmentProgressDialog:
         
         self.success_label = self._create_stat_row(left_frame, "✅ Erfolgreiche Anreicherungen:", "0")
         self.error_label = self._create_stat_row(left_frame, "❌ Fehler:", "0")
-        self.retry_label = self._create_stat_row(left_frame, "⏳ Rate-Limit Retries:", "0")
+        self.retry_1_label = self._create_stat_row(left_frame, "⏳ Rate-Limit Retries (1/3):", "0")
+        self.retry_2_label = self._create_stat_row(left_frame, "⏳ Rate-Limit Retries (2/3):", "0")
         
         # Rechte Spalte
         right_frame = ttk.Frame(stats_grid)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
         
+        self.retry_3_label = self._create_stat_row(right_frame, "⏳ Rate-Limit Retries (3/3):", "0")
         self.not_found_label = self._create_stat_row(right_frame, "🔍 ISBN nicht gefunden:", "0")
         self.conflict_label = self._create_stat_row(right_frame, "⚠️ Konflikte übersprungen:", "0")
         self.rate_label = self._create_stat_row(right_frame, "📊 Erfolgsrate:", "0.0%")
@@ -197,7 +201,8 @@ class EnrichmentProgressDialog:
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
     
     def update_progress(self, processed: int, successful: int, failed: int, 
-                       rate_limit_retries: int, isbn_not_found: int, conflicts_skipped: int):
+                       retry_1: int, retry_2: int, retry_3: int,
+                       isbn_not_found: int, conflicts_skipped: int):
         """
         Aktualisiert den Fortschritt und die Statistiken.
         
@@ -205,7 +210,9 @@ class EnrichmentProgressDialog:
             processed: Anzahl verarbeiteter Records
             successful: Anzahl erfolgreicher Anreicherungen
             failed: Anzahl fehlgeschlagener Anreicherungen
-            rate_limit_retries: Anzahl Rate-Limit Retries
+            retry_1: Anzahl Rate-Limit Retries beim 1. Versuch
+            retry_2: Anzahl Rate-Limit Retries beim 2. Versuch
+            retry_3: Anzahl Rate-Limit Retries beim 3. Versuch
             isbn_not_found: Anzahl nicht gefundener ISBNs
             conflicts_skipped: Anzahl übersprungener Konflikte
         """
@@ -220,7 +227,9 @@ class EnrichmentProgressDialog:
         self.stats.processed_records = processed
         self.stats.successful_enrichments = successful
         self.stats.failed_enrichments = failed
-        self.stats.rate_limit_retries = rate_limit_retries
+        self.stats.rate_limit_retry_1 = retry_1
+        self.stats.rate_limit_retry_2 = retry_2
+        self.stats.rate_limit_retry_3 = retry_3
         self.stats.isbn_not_found = isbn_not_found
         self.stats.conflicts_skipped = conflicts_skipped
         
@@ -238,8 +247,12 @@ class EnrichmentProgressDialog:
             self.success_label.config(text=str(successful))
         if self.error_label and self.error_label.winfo_exists():
             self.error_label.config(text=str(failed))
-        if self.retry_label and self.retry_label.winfo_exists():
-            self.retry_label.config(text=str(rate_limit_retries))
+        if self.retry_1_label and self.retry_1_label.winfo_exists():
+            self.retry_1_label.config(text=str(retry_1))
+        if self.retry_2_label and self.retry_2_label.winfo_exists():
+            self.retry_2_label.config(text=str(retry_2))
+        if self.retry_3_label and self.retry_3_label.winfo_exists():
+            self.retry_3_label.config(text=str(retry_3))
         if self.not_found_label and self.not_found_label.winfo_exists():
             self.not_found_label.config(text=str(isbn_not_found))
         if self.conflict_label and self.conflict_label.winfo_exists():

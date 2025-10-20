@@ -5,6 +5,7 @@ import threading
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 from enrichment_dialog import EnrichmentProgressDialog
+from statistics_dialog import show_statistics
 
 
 def run_enrichment(root: tk.Tk) -> None:
@@ -74,11 +75,11 @@ def run_enrichment(root: tk.Tk) -> None:
             import enrich_metadata
             
             # Callback für Progress-Updates
-            def progress_callback(processed, successful, failed, rate_limit_retries, isbn_not_found, conflicts_skipped):
+            def progress_callback(processed, successful, failed, retry_1, retry_2, retry_3, isbn_not_found, conflicts_skipped):
                 if not cancelled:  # Nur Updates senden, wenn nicht abgebrochen
                     try:
-                        root.after(0, lambda p=processed, s=successful, f=failed, r=rate_limit_retries, i=isbn_not_found, c=conflicts_skipped: 
-                            progress_dialog.update_progress(p, s, f, r, i, c))
+                        root.after(0, lambda p=processed, s=successful, f=failed, r1=retry_1, r2=retry_2, r3=retry_3, i=isbn_not_found, c=conflicts_skipped: 
+                            progress_dialog.update_progress(p, s, f, r1, r2, r3, i, c))
                     except (tk.TclError, AttributeError):
                         pass
             
@@ -102,25 +103,22 @@ def run_enrichment(root: tk.Tk) -> None:
                     if result.get('tree'):
                         result['tree'].write(output_path, encoding='utf-8', xml_declaration=True)
                     
-                    success_msg = (
-                        f"Die Anreicherung wurde erfolgreich abgeschlossen!\n\n"
-                        f"Verarbeitete Records: {result['processed_records']}\n"
-                        f"Erfolgreiche Anreicherungen: {result['successful_enrichments']}\n"
-                        f"Fehler: {result['failed_enrichments']}\n"
-                        f"Rate-Limit Retries: {result['rate_limit_retries']}\n"
-                        f"ISBN nicht gefunden: {result['isbn_not_found']}\n"
-                        f"Konflikte übersprungen: {result['conflicts_skipped']}\n\n"
-                        f"Angereicherte Datei gespeichert:\n{output_path}"
-                    )
-                    
                     def show_success():
                         try:
-                            progress_dialog.mark_complete(
-                                success=True,
-                                message=success_msg
+                            # Progress-Dialog schließen
+                            progress_dialog.dialog.destroy()
+                            
+                            # Statistik-Dialog anzeigen
+                            show_statistics(root, result)
+                            
+                            # Abschließende Bestätigung
+                            messagebox.showinfo(
+                                "Erfolg",
+                                f"Angereicherte Datei gespeichert:\n{output_path}",
+                                parent=root
                             )
-                        except (tk.TclError, AttributeError):
-                            pass
+                        except (tk.TclError, AttributeError) as e:
+                            print(f"Fehler beim Anzeigen der Statistiken: {e}")
                     root.after(0, show_success)
             else:
                 def show_error():
