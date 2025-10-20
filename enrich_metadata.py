@@ -18,7 +18,7 @@ except ImportError:
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
 CONFIDENCE_THRESHOLD = 0.6   # Konfidenz für Übernahme von isbnlib-Daten (0-1)
 CONFLICT_SIMILARITY_THRESHOLD = 0.4  # Unterhalb gilt ein Vergleich als Konflikt
-RATE_LIMIT_SECONDS = 0.10  # Globale Mindestzeit zwischen ANY zwei Anfragen (threadsicher)
+RATE_LIMIT_SECONDS = 0.12  # Globale Mindestzeit zwischen ANY zwei Anfragen (threadsicher)
 MAX_RETRIES = 3
 BACKOFF_BASE_SECONDS = 2.0  # Längerer Backoff bei 429-Fehlern
 MAX_WORKERS = 4  # Reduziert auf 4 parallele Threads, um API-Limits zu respektieren
