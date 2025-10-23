@@ -43,7 +43,7 @@ for code in sorted(isil_codes):
     time.sleep(0.2)
 
 # 4) Ergebnisse in eine CSV schreiben
-csv_file = "isil_abgleich_ergebnisse.csv"
+csv_file = "isil_matching_results.csv"
 with open(csv_file, mode="w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=["ISIL", "Status", "Name"])
     writer.writeheader()
