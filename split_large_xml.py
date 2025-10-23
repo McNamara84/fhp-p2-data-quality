@@ -1,10 +1,10 @@
 import xml.etree.ElementTree as ET
 
 #  Pfad zur Originaldatei
-xml_file = r"C:\xampp\htdocs\fhp-p2-data-quality\voebvoll-20241027.xml"
+xml_file = "voebvoll-20241027.xml"
 
 # Name für die kleinere Test-Datei
-output_file = r"C:\xampp\htdocs\fhp-p2-data-quality\test-teil_1.xml"
+output_file = "test-teil_1.xml"
 
 # anzhal der Datensätze in der Test-Datei
 max_records = 10000  # z. B. 10.000 Datensätze
