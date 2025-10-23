@@ -4,7 +4,7 @@ import csv
 import time
 
 # 1) XML-Datei einlesen
-xml_file = r"C:\xampp\htdocs\fhp-p2-data-quality\teil_1.xml"
+xml_file = "test-teil_1.xml"
 tree = ET.parse(xml_file)
 root = tree.getroot()
 
