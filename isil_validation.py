@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import requests
+import re
 import csv
 import time
 
@@ -17,8 +18,8 @@ for record in root.findall(".//record"):
             if sub.text:
                 code = sub.text.strip()
                 if code.startswith("DE-"):
-                    # Entfernt 'V0' z.B. DE-V0106 -> DE-106
-                    cleaned_code = code.replace("V0", "")
+                    # Entfernt 'V' oder 'V0' nach 'DE-'
+                    cleaned_code = re.sub(r"^DE-?V0?", "DE-", code)
                     isil_codes.add(cleaned_code)
 
 print(f"Anzahl unterschiedlicher ISIL-Codes gefunden: {len(isil_codes)}")
