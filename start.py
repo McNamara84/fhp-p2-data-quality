@@ -27,31 +27,41 @@ def run_enrichment(root: tk.Tk) -> None:
         messagebox.showerror("Fehler", f"Datei nicht gefunden: {xml_path}", parent=root)
         return
     
-    # Anzahl Records ermitteln
+    # Anzahl ISBNs ermitteln (nur für kleine Dateien, sonst schätzen)
+    isbn_count = None  # None = unbekannt (wird während Pass 1 ermittelt)
+    
     try:
-        import xml.etree.ElementTree as ET
-        tree = ET.parse(xml_path)
-        root_elem = tree.getroot()
+        file_size_mb = os.path.getsize(xml_path) / (1024 * 1024)
         
-        # ISBNs zählen
-        isbn_count = 0
-        for record in root_elem.findall("record"):
-            for datafield in record.findall("datafield"):
-                if datafield.get("tag") == "020":
-                    for subfield in datafield.findall("subfield"):
-                        if subfield.get("code") == "a" and subfield.text and subfield.text.strip():
-                            isbn_count += 1
-                            break  # Nur eine ISBN pro Record
-                    if isbn_count > 0:
-                        break
-        
-        if isbn_count == 0:
-            messagebox.showwarning(
-                "Keine ISBNs gefunden",
-                "Die ausgewählte Datei enthält keine ISBNs (Feld 020$a).",
-                parent=root
-            )
-            return
+        # Nur für kleine Dateien (<100MB) vorab zählen
+        if file_size_mb < 100:
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(xml_path)
+            root_elem = tree.getroot()
+            
+            # ISBNs zählen
+            isbn_count = 0
+            for record in root_elem.findall("record"):
+                for datafield in record.findall("datafield"):
+                    if datafield.get("tag") == "020":
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == "a" and subfield.text and subfield.text.strip():
+                                isbn_count += 1
+                                break  # Nur erste ISBN pro Record
+                        break  # Nur erstes datafield 020
+            
+            if isbn_count == 0:
+                messagebox.showwarning(
+                    "Keine ISBNs gefunden",
+                    "Die ausgewählte Datei enthält keine ISBNs (Feld 020$a).",
+                    parent=root
+                )
+                return
+        else:
+            # Für große Dateien: Unbekannte Anzahl (wird in Pass 1 ermittelt)
+            print(f"Große Datei ({file_size_mb:.0f} MB) - ISBN-Anzahl wird während Verarbeitung ermittelt")
+            isbn_count = None
+            
     except Exception as e:
         messagebox.showerror("Fehler", f"Fehler beim Analysieren der Datei:\n{e}", parent=root)
         return
@@ -75,11 +85,11 @@ def run_enrichment(root: tk.Tk) -> None:
             import enrich_metadata
             
             # Callback für Progress-Updates
-            def progress_callback(processed, successful, failed, retry_1, retry_2, retry_3, isbn_not_found, conflicts_skipped):
+            def progress_callback(processed, successful, failed, retry_1, retry_2, retry_3, isbn_not_found, conflicts_skipped, total=None):
                 if not cancelled:  # Nur Updates senden, wenn nicht abgebrochen
                     try:
-                        root.after(0, lambda p=processed, s=successful, f=failed, r1=retry_1, r2=retry_2, r3=retry_3, i=isbn_not_found, c=conflicts_skipped: 
-                            progress_dialog.update_progress(p, s, f, r1, r2, r3, i, c))
+                        root.after(0, lambda p=processed, s=successful, f=failed, r1=retry_1, r2=retry_2, r3=retry_3, i=isbn_not_found, c=conflicts_skipped, t=total: 
+                            progress_dialog.update_progress(p, s, f, r1, r2, r3, i, c, total=t))
                     except (tk.TclError, AttributeError):
                         pass
             
@@ -98,9 +108,15 @@ def run_enrichment(root: tk.Tk) -> None:
                             pass
                     root.after(0, show_cancel)
                 else:
-                    # Erfolgreich - Datei speichern
+                    # Erfolgreich
                     output_path = xml_path.replace(".xml", "_enriched.xml")
-                    if result.get('tree'):
+                    
+                    # Datei speichern (je nach return-Format)
+                    if result.get('output_path'):
+                        # Iteratives Parsing: Datei wurde bereits geschrieben
+                        output_path = result.get('output_path')
+                    elif result.get('tree'):
+                        # Altes Format: Tree zurückgegeben (Backward-Kompatibilität)
                         result['tree'].write(output_path, encoding='utf-8', xml_declaration=True)
                     
                     # JSON-Statistiken exportieren

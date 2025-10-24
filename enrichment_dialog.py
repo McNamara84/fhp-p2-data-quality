@@ -53,13 +53,13 @@ class EnrichmentStats:
 class EnrichmentProgressDialog:
     """Dialog-Fenster für die Anzeige des Enrichment-Fortschritts."""
     
-    def __init__(self, parent: tk.Tk, total_records: int, on_cancel: Optional[Callable] = None):
+    def __init__(self, parent: tk.Tk, total_records: Optional[int], on_cancel: Optional[Callable] = None):
         """
         Initialisiert den Progress-Dialog.
         
         Args:
             parent: Eltern-Fenster
-            total_records: Gesamtanzahl der zu verarbeitenden Records
+            total_records: Gesamtanzahl der zu verarbeitenden Records (None = unbekannt)
             on_cancel: Callback-Funktion beim Abbruch
         """
         self.parent = parent
@@ -68,7 +68,7 @@ class EnrichmentProgressDialog:
         
         # Statistiken initialisieren
         self.stats = EnrichmentStats(
-            total_records=total_records,
+            total_records=total_records or 0,  # 0 wenn unbekannt
             start_time=time.time()
         )
         
@@ -202,7 +202,7 @@ class EnrichmentProgressDialog:
     
     def update_progress(self, processed: int, successful: int, failed: int, 
                        retry_1: int, retry_2: int, retry_3: int,
-                       isbn_not_found: int, conflicts_skipped: int):
+                       isbn_not_found: int, conflicts_skipped: int, total: Optional[int] = None):
         """
         Aktualisiert den Fortschritt und die Statistiken.
         
@@ -215,6 +215,7 @@ class EnrichmentProgressDialog:
             retry_3: Anzahl Rate-Limit Retries beim 3. Versuch
             isbn_not_found: Anzahl nicht gefundener ISBNs
             conflicts_skipped: Anzahl übersprungener Konflikte
+            total: Optional die tatsächliche Gesamtanzahl (wenn in Pass 1 ermittelt)
         """
         # Prüfen, ob Dialog noch existiert
         try:
@@ -222,6 +223,10 @@ class EnrichmentProgressDialog:
                 return
         except (tk.TclError, AttributeError):
             return
+        
+        # Total-Records dynamisch aktualisieren (wenn von enrich_metadata übergeben)
+        if total is not None and total > 0:
+            self.stats.total_records = total
         
         # Statistiken aktualisieren
         self.stats.processed_records = processed
@@ -239,7 +244,14 @@ class EnrichmentProgressDialog:
             self.progress_bar["value"] = progress_percentage
             
             self.progress_label.config(
-                text=f"{processed} / {self.stats.total_records} Records ({progress_percentage:.1f}%)"
+                text=f"{processed:,} / {self.stats.total_records:,} Records ({progress_percentage:.1f}%)"
+            )
+        else:
+            # Unbekannte Gesamtanzahl - zeige nur verarbeitete Records
+            self.progress_bar["mode"] = "indeterminate"
+            self.progress_bar.start(10)
+            self.progress_label.config(
+                text=f"{processed:,} Records verarbeitet (Gesamtanzahl wird ermittelt...)"
             )
         
         # Statistik-Labels aktualisieren

@@ -348,6 +348,191 @@ def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, us
     return has_changes
 
 
+def _enrich_record_inline(idx, elem, isbn, norm13, meta, stats, use_tqdm):
+    """
+    Inline-Anreicherung eines einzelnen Records (direkt am ET.Element während iterparse).
+    Basiert auf _enrich_single_record, aber ohne change_log (da zu memory-intensiv).
+    
+    WICHTIG: Zählt auch Baseline-Statistiken (total_records, empty_before, etc.)
+    
+    Args:
+        idx: Record-Position (1-based)
+        elem: ET.Element des Records
+        isbn: Original ISBN
+        norm13: Normalisierte ISBN-13
+        meta: Metadaten-Dict von isbnlib
+        stats: Statistik-Dict (wird in-place modifiziert)
+        use_tqdm: Boolean ob tqdm verwendet wird
+        
+    Returns:
+        bool: True wenn Änderungen vorgenommen wurden
+    """
+    has_changes = False
+    
+    # Zähle diesen Record für field_stats (total_records)
+    for key in ISBNLIB_MARC_MAP.keys():
+        stats['field_stats'][key]['total_records'] += 1
+    
+    # 1) Konfliktquote prüfen (Pre-Check)
+    comparable = 0
+    conflicts = 0
+    
+    for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
+        meta_value = meta.get(key)
+        if key == "Authors" and isinstance(meta_value, list):
+            meta_value = ", ".join(meta_value)
+        if not meta_value or str(meta_value).strip() == "":
+            continue
+        
+        # Hole MARC-Wert
+        marc_value = None
+        if key == "Title" and marc_tag == "245":
+            for datafield in elem.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    subfield_a = None
+                    subfield_b = None
+                    for subfield in datafield.findall("subfield"):
+                        if subfield.get("code") == "a":
+                            subfield_a = subfield.text.strip() if subfield.text else ""
+                        elif subfield.get("code") == "b":
+                            subfield_b = subfield.text.strip() if subfield.text else ""
+                    if subfield_a:
+                        title_parts = [subfield_a.rstrip(':').rstrip()]
+                        if subfield_b:
+                            title_parts.append(subfield_b)
+                        marc_value = " - ".join(title_parts)
+                    break
+        else:
+            for datafield in elem.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    if sub_code:
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == sub_code:
+                                marc_value = subfield.text.strip() if subfield.text else ""
+                                break
+        
+        if not marc_value or str(marc_value).strip() == "":
+            continue
+        
+        # Vergleiche
+        if str(marc_value).strip().lower() == str(meta_value).strip().lower():
+            comparable += 1
+            continue
+        if is_abbreviation(str(marc_value), str(meta_value)):
+            comparable += 1
+            continue
+        
+        sim = similarity(str(marc_value), str(meta_value))
+        comparable += 1
+        if sim < CONFLICT_SIMILARITY_THRESHOLD:
+            conflicts += 1
+    
+    # Konfliktquote zu hoch? → Abbrechen
+    if comparable > 0 and conflicts > (comparable / 2):
+        stats['conflicts_skipped'] += 1
+        for key in ISBNLIB_MARC_MAP.keys():
+            stats['field_stats'][key]['conflicts'] += 1
+        return False
+    
+    # 2) Felder anreichern
+    for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
+        meta_value = meta.get(key)
+        if key == "Authors" and isinstance(meta_value, list):
+            meta_value = ", ".join(meta_value)
+        if not meta_value:
+            continue
+        
+        # Hole MARC-Wert & Subfield-Element
+        marc_value = None
+        marc_subfield = None
+        
+        if key == "Title" and marc_tag == "245":
+            for datafield in elem.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    subfield_a_elem = None
+                    subfield_b = None
+                    for subfield in datafield.findall("subfield"):
+                        if subfield.get("code") == "a":
+                            subfield_a = subfield.text.strip() if subfield.text else ""
+                            subfield_a_elem = subfield
+                        elif subfield.get("code") == "b":
+                            subfield_b = subfield.text.strip() if subfield.text else ""
+                    if subfield_a_elem is not None and subfield.text:
+                        title_parts = [subfield.text.rstrip(':').rstrip()]
+                        if subfield_b:
+                            title_parts.append(subfield_b)
+                        marc_value = " - ".join(title_parts)
+                        marc_subfield = subfield_a_elem
+                    break
+        else:
+            for datafield in elem.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    if sub_code:
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == sub_code:
+                                marc_value = subfield.text.strip() if subfield.text else ""
+                                marc_subfield = subfield
+                                break
+        
+        # SPEZIAL: Authors - Intelligente Format-Behandlung
+        if key == "Authors" and meta_value and marc_value:
+            if ',' in marc_value:
+                marc_parts = marc_value.split(',', 1)
+                marc_firstname = marc_parts[1].strip() if len(marc_parts) > 1 else ""
+                api_parts = meta_value.strip().split()
+                if len(api_parts) >= 2:
+                    api_firstname = " ".join(api_parts[:-1])
+                    has_point_abbreviation = '.' in marc_firstname
+                    has_length_abbreviation = is_abbreviation(marc_firstname, api_firstname)
+                    if not has_point_abbreviation and not has_length_abbreviation:
+                        continue  # MARC vollständig -> skip
+            
+            converted_author = convert_author_to_marc_format(meta_value, marc_value)
+            if converted_author:
+                meta_value = converted_author
+            else:
+                continue
+        
+        # Änderungslogik
+        if marc_value is not None and str(marc_value).strip() == str(meta_value).strip():
+            continue  # Identisch
+        
+        if (marc_value is None or marc_value == "") and meta_value:
+            # Leeres Feld befüllen
+            if marc_subfield is not None:
+                stats['field_stats'][key]['empty_before'] += 1
+                stats['field_stats'][key]['filled_after'] += 1
+                
+                if key == "Authors" and ',' not in meta_value:
+                    parts = meta_value.strip().split()
+                    if len(parts) >= 2:
+                        lastname = parts[-1]
+                        firstname = " ".join(parts[:-1])
+                        meta_value = f"{lastname}, {firstname}"
+                
+                marc_subfield.text = meta_value
+                has_changes = True
+        
+        elif marc_value and is_abbreviation(str(marc_value), str(meta_value)):
+            # Abkürzung ersetzen
+            if marc_subfield is not None:
+                stats['field_stats'][key]['abbreviation_replaced'] += 1
+                marc_subfield.text = meta_value
+                has_changes = True
+        
+        else:
+            # Korrektur bei Ähnlichkeit
+            if marc_value:
+                sim = similarity(str(marc_value), str(meta_value))
+                if CONFIDENCE_THRESHOLD < sim < LEVENSHTEIN_THRESHOLD:
+                    if marc_subfield is not None:
+                        stats['field_stats'][key]['corrected'] += 1
+                        marc_subfield.text = meta_value
+                        has_changes = True
+    
+    return has_changes
+
+
 def fetch_isbn_metadata(idx, isbn):
     """Fragt Metadaten für eine ISBN ab (mit Retry und Caching)."""
     norm13 = isbn
@@ -425,7 +610,12 @@ def fetch_isbn_metadata(idx, isbn):
 
 def main(xml_path, progress_callback=None, check_cancelled=None):
     """
-    Hauptfunktion für die Metadaten-Anreicherung.
+    Hauptfunktion für die Metadaten-Anreicherung mit ITERATIVEM 3-PASS-PARSING.
+    Speicherschonend - funktioniert auch mit sehr großen Dateien (>2GB).
+    
+    Pass 1: Zähle Records & sammle ISBNs (iterativ, kein Speicher-Akkumulation)
+    Pass 2: Hole Metadaten parallel von APIs  
+    Pass 3: Reichere Records an & schreibe Ausgabedatei (iterativ)
     
     Args:
         xml_path: Pfad zur XML-Datei
@@ -433,178 +623,136 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
         check_cancelled: Optional callback() -> bool für Abbruchprüfung
         
     Returns:
-        dict mit Statistiken oder None bei Fehler
+        dict mit Statistiken (inkl. 'output_path' statt 'tree') oder None bei Fehler
     """
+    # Prüfe Dateigröße
+    file_size_mb = os.path.getsize(xml_path) / (1024 * 1024)
+    print(f"\n📁 Datei: {os.path.basename(xml_path)} ({file_size_mb:.0f} MB)")
+    
+    if file_size_mb > 500:
+        print("   🔄 SPEICHERSCHONENDER 3-PASS-MODUS aktiviert (iteratives Parsing)")
+    
     # Statistiken initialisieren
     stats = {
         'total_records': 0,
         'processed_records': 0,
         'successful_enrichments': 0,
         'failed_enrichments': 0,
-        'rate_limit_retry_1': 0,  # Retries beim 1. Versuch
-        'rate_limit_retry_2': 0,  # Retries beim 2. Versuch
-        'rate_limit_retry_3': 0,  # Retries beim 3. Versuch
+        'rate_limit_retry_1': 0,
+        'rate_limit_retry_2': 0,
+        'rate_limit_retry_3': 0,
         'isbn_not_found': 0,
         'conflicts_skipped': 0,
         'multi_isbn_warnings': 0,
         'cancelled': False,
         'field_stats': {
-            'Title': {
-                'total_records': 0,
-                'empty_before': 0, 
-                'filled_after': 0, 
-                'had_abbreviation': 0,
-                'abbreviation_replaced': 0, 
-                'potentially_incorrect': 0,
-                'corrected': 0, 
-                'conflicts': 0
-            },
-            'Authors': {
-                'total_records': 0,
-                'empty_before': 0, 
-                'filled_after': 0, 
-                'had_abbreviation': 0,
-                'abbreviation_replaced': 0, 
-                'potentially_incorrect': 0,
-                'corrected': 0, 
-                'conflicts': 0
-            },
-            'Publisher': {
-                'total_records': 0,
-                'empty_before': 0, 
-                'filled_after': 0, 
-                'had_abbreviation': 0,
-                'abbreviation_replaced': 0, 
-                'potentially_incorrect': 0,
-                'corrected': 0, 
-                'conflicts': 0
-            },
-            'Year': {
-                'total_records': 0,
-                'empty_before': 0, 
-                'filled_after': 0, 
-                'had_abbreviation': 0,
-                'abbreviation_replaced': 0, 
-                'potentially_incorrect': 0,
-                'corrected': 0, 
-                'conflicts': 0
-            },
-        }
+            'Title': {'total_records': 0, 'empty_before': 0, 'filled_after': 0, 'had_abbreviation': 0,
+                     'abbreviation_replaced': 0, 'potentially_incorrect': 0, 'corrected': 0, 'conflicts': 0},
+            'Authors': {'total_records': 0, 'empty_before': 0, 'filled_after': 0, 'had_abbreviation': 0,
+                       'abbreviation_replaced': 0, 'potentially_incorrect': 0, 'corrected': 0, 'conflicts': 0},
+            'Publisher': {'total_records': 0, 'empty_before': 0, 'filled_after': 0, 'had_abbreviation': 0,
+                         'abbreviation_replaced': 0, 'potentially_incorrect': 0, 'corrected': 0, 'conflicts': 0},
+            'Year': {'total_records': 0, 'empty_before': 0, 'filled_after': 0, 'had_abbreviation': 0,
+                    'abbreviation_replaced': 0, 'potentially_incorrect': 0, 'corrected': 0, 'conflicts': 0},
+        },
+        'change_log': []
     }
     
-    # Einlesen der XML-Datei
-    try:
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-    except Exception as e:
-        print(f"Fehler beim Einlesen der Datei: {e}")
-        return None
-
-    records = root.findall("record")
-    total_records = len(records)
-    isbn_records = []
-
-    for record in records:
-        isbns = []
-        for datafield in record.findall("datafield"):
-            if datafield.get("tag") == "020":
-                for subfield in datafield.findall("subfield"):
-                    if subfield.get("code") == "a" and subfield.text and subfield.text.strip():
-                        isbns.append(subfield.text.strip())
-        if len(isbns) == 1:
-            isbn_records.append((record, isbns[0]))
-        elif len(isbns) > 1:
-            stats['multi_isbn_warnings'] += 1
-            print(f"Warnung: Datensatz mit mehreren ISBNs gefunden (IDs: {[cf.text for cf in record.findall('controlfield') if cf.get('tag') == '001']}) - übersprungen.")
-
-    stats['total_records'] = len(isbn_records)
+    # ==================== PASS 1: ISBN-Sammlung & Record-Zählung ====================
+    print("\n🔍 Pass 1/3: Sammle ISBNs (iterativ, speicherschonend)...")
     
-    print(f"{len(isbn_records)} Datensätze mit ISBN von {total_records} Datensätzen insgesamt eingelesen.")
-    if stats['multi_isbn_warnings']:
-        print(f"{stats['multi_isbn_warnings']} Datensätze mit mehreren ISBNs wurden übersprungen.")
-
-    # Pre-Enrichment Scan: Baseline-Statistiken erfassen
-    print("Pre-Enrichment Scan: Erfasse Baseline-Statistiken...")
-    for record, isbn in isbn_records:
-        for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
-            stats['field_stats'][key]['total_records'] += 1
-            
-            marc_value = None
-            
-            # Spezialbehandlung für Titel: Kombiniere Subfield 'a' + 'b'
-            if key == "Title" and marc_tag == "245":
-                for datafield in record.findall("datafield"):
-                    if datafield.get("tag") == marc_tag:
-                        subfield_a = None
-                        subfield_b = None
-                        
-                        for subfield in datafield.findall("subfield"):
-                            if subfield.get("code") == "a":
-                                subfield_a = subfield.text.strip() if subfield.text else ""
-                            elif subfield.get("code") == "b":
-                                subfield_b = subfield.text.strip() if subfield.text else ""
-                        
-                        if subfield_a:
-                            title_parts = [subfield_a.rstrip(':').rstrip()]
-                            if subfield_b:
-                                title_parts.append(subfield_b)
-                            marc_value = " - ".join(title_parts)
-                        break
-            else:
-                # Normale Verarbeitung für andere Felder
-                for datafield in record.findall("datafield"):
-                    if datafield.get("tag") == marc_tag:
-                        if sub_code:
-                            for subfield in datafield.findall("subfield"):
-                                if subfield.get("code") == sub_code:
-                                    marc_value = subfield.text.strip() if subfield.text else ""
-                                    break
-            
-            # Leer?
-            if not marc_value or marc_value == "":
-                stats['field_stats'][key]['empty_before'] += 1
-            else:
-                # Abkürzung? (z.B. "Max." oder sehr kurz)
-                if '.' in marc_value or len(marc_value) <= 3:
-                    stats['field_stats'][key]['had_abbreviation'] += 1
+    isbn_map = {}  # isbn -> record_position (1-based)
+    record_position = 0
+    total_records_in_file = 0
+    
+    try:
+        # Iteratives Parsing - lädt jeweils nur EIN Element
+        for event, elem in ET.iterparse(xml_path, events=('end',)):
+            if elem.tag == 'record':
+                record_position += 1
+                total_records_in_file += 1
                 
-                # Potenziell fehlerhaft? (z.B. Jahr mit nur 2-3 Zeichen)
-                if key == 'Year' and len(marc_value) < 4:
-                    stats['field_stats'][key]['potentially_incorrect'] += 1
-
-    print("Metadatenabfrage mit isbnlib...")
-    change_log = []
-
-    # Parallele Abfrage mit ThreadPoolExecutor
+                if record_position % 100000 == 0:
+                    print(f"   {record_position:,} Records durchsucht...")
+                
+                # Suche ISBNs in diesem Record
+                isbns = []
+                for datafield in elem.findall("datafield"):
+                    if datafield.get("tag") == "020":
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == "a" and subfield.text:
+                                isbn_text = subfield.text.strip()
+                                if isbn_text:
+                                    isbns.append(isbn_text)
+                
+                # Nur eindeutige ISBNs verarbeiten
+                if len(isbns) == 1:
+                    isbn_map[isbns[0]] = record_position
+                elif len(isbns) > 1:
+                    stats['multi_isbn_warnings'] += 1
+                
+                # WICHTIG: Element sofort aus Speicher entfernen
+                elem.clear()
+                # Note: getprevious() ist lxml-spezifisch, ET hat das nicht
+                # Alternativ: root.clear() nutzen wir nicht, da iterparse keinen root behält
+    
+    except MemoryError:
+        print("\n❌ FEHLER: Nicht genug Speicher verfügbar!")
+        print("   Die Datei ist extrem groß. Bitte in kleinere Teile aufteilen.")
+        return None
+    except Exception as e:
+        print(f"\n❌ Fehler beim Parsen: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    
+    stats['total_records'] = len(isbn_map)
+    print(f"   ✓ {len(isbn_map):,} eindeutige ISBNs gefunden (von {total_records_in_file:,} Records)")
+    if stats['multi_isbn_warnings'] > 0:
+        print(f"   ⚠  {stats['multi_isbn_warnings']:,} Records mit mehreren ISBNs übersprungen")
+    
+    # GUI über Gesamtanzahl informieren (nach Pass 1)
+    if progress_callback:
+        try:
+            progress_callback(
+                0, 0, 0, 0, 0, 0, 0, 0, total=len(isbn_map)
+            )
+        except TypeError:
+            # Fallback für alte Callback-Signatur ohne 'total' Parameter
+            pass
+    
+    if len(isbn_map) == 0:
+        print("❌ Keine ISBNs zum Anreichern gefunden!")
+        return stats
+    
+    # ==================== PASS 2: Metadaten abrufen ====================
+    print(f"\n📚 Pass 2/3: Hole Metadaten für {len(isbn_map):,} ISBNs...")
+    
+    isbn_meta_cache = {}  # isbn -> (norm13, meta)
+    
     try:
         from tqdm import tqdm
-        use_tqdm = True and not progress_callback  # tqdm nur wenn kein GUI-Callback
+        use_tqdm = True and not progress_callback
     except ImportError:
         use_tqdm = False
-        if not progress_callback:
-            print("Hinweis: 'tqdm' nicht installiert. Für Fortschrittsbalken bitte 'pip install tqdm' ausführen.")
-
-    # Pipeline-Ansatz: ISBN-Abfrage und Anreicherung verzahnt
-    isbn_meta_map = {}  # idx -> (norm13, meta)
-    record_map = {idx: (record, isbn) for idx, (record, isbn) in enumerate(isbn_records, 1)}  # idx -> (record, isbn)
     
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(fetch_isbn_metadata, idx, isbn): idx for idx, (_, isbn) in enumerate(isbn_records, 1)}
+        futures = {executor.submit(fetch_isbn_metadata, idx, isbn): (idx, isbn) 
+                  for idx, isbn in enumerate(isbn_map.keys(), 1)}
+        
         iterator = as_completed(futures)
         if use_tqdm:
-            iterator = tqdm(iterator, total=len(isbn_records), desc="ISBN-Metadaten abrufen & anreichern")
-
+            iterator = tqdm(iterator, total=len(isbn_map), desc="Metadaten abrufen")
+        
         for future in iterator:
-            # Abbruchprüfung
             if check_cancelled and check_cancelled():
                 stats['cancelled'] = True
-                print("\nAnreicherung vom Benutzer abgebrochen.")
+                print("\n⛔ Vom Benutzer abgebrochen!")
                 return stats
             
             idx, norm13, meta, error_msg, retry_attempt = future.result()
-            stats['processed_records'] = idx
             
-            # Retry-Statistik tracken (retry_attempt ist 0 wenn erfolgreich beim ersten Versuch, 1-3 wenn Retry nötig war)
+            # Retry-Statistik
             if retry_attempt > 0:
                 if retry_attempt == 1:
                     stats['rate_limit_retry_1'] += 1
@@ -613,62 +761,149 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
                 elif retry_attempt == 3:
                     stats['rate_limit_retry_3'] += 1
             
-            if error_msg:
-                if "429" not in error_msg:  # Nur echte Fehler zählen (429 ist schon über Retry getrackt)
-                    stats['failed_enrichments'] += 1
-                msg = f"[{idx}] {error_msg} (ISBN {norm13})"
-                if not use_tqdm and not progress_callback:
-                    print(msg)
-                logger.warning(msg)
-            
-            if not meta:
+            if meta:
+                original_isbn = futures[future][1]
+                isbn_meta_cache[original_isbn] = (norm13, meta)
+            elif not error_msg or "429" not in error_msg:
                 stats['isbn_not_found'] += 1
-                msg = f"ISBN nicht gefunden: {norm13}"
-                if not use_tqdm and not progress_callback:
-                    print(f"[{idx}] {msg}")
-                logger.warning(msg)
-            else:
-                isbn_meta_map[idx] = (norm13, meta)
-                
-                # Anreicherung DIREKT nach erfolgreicher ISBN-Abfrage durchführen
-                record, isbn = record_map[idx]
-                has_changes = _enrich_single_record(
-                    idx, record, isbn, norm13, meta, 
-                    stats, change_log, 
-                    use_tqdm, progress_callback
-                )
-                if has_changes:
-                    stats['successful_enrichments'] += 1
             
-            # GUI-Update
-            if progress_callback:
-                progress_callback(
-                    stats['processed_records'],
-                    stats['successful_enrichments'],
-                    stats['failed_enrichments'],
-                    stats['rate_limit_retry_1'],
-                    stats['rate_limit_retry_2'],
-                    stats['rate_limit_retry_3'],
-                    stats['isbn_not_found'],
-                    stats['conflicts_skipped']
-                )
-
-    # Zusammenfassung
-    stats['change_log'] = change_log
-    stats['tree'] = tree  # XML-Tree für Export zurückgeben
+            if error_msg and "429" not in error_msg:
+                stats['failed_enrichments'] += 1
+            
+            # GUI-Update während Metadaten-Abruf (Pass 2)
+            # WICHTIG: 'successful' bleibt 0, da noch keine Anreicherungen stattgefunden haben
+            if progress_callback and idx % 10 == 0:
+                try:
+                    progress_callback(
+                        idx, 0, stats['failed_enrichments'],  # successful=0 in Pass 2!
+                        stats['rate_limit_retry_1'], stats['rate_limit_retry_2'], stats['rate_limit_retry_3'],
+                        stats['isbn_not_found'], stats['conflicts_skipped'],
+                        total=len(isbn_map)
+                    )
+                except TypeError:
+                    # Fallback für alte Signatur ohne 'total'
+                    progress_callback(
+                        idx, 0, stats['failed_enrichments'],  # successful=0 in Pass 2!
+                        stats['rate_limit_retry_1'], stats['rate_limit_retry_2'], stats['rate_limit_retry_3'],
+                        stats['isbn_not_found'], stats['conflicts_skipped']
+                    )
     
+    print(f"   ✓ {len(isbn_meta_cache):,} Metadaten erfolgreich abgerufen")
+    if stats['isbn_not_found'] > 0:
+        print(f"   ⚠  {stats['isbn_not_found']:,} ISBNs nicht gefunden")
+    
+    # ==================== PASS 3: Anreicherung & Schreiben ====================
+    print(f"\n📝 Pass 3/3: Reichere Records an & schreibe Ausgabedatei...")
+    
+    output_path = xml_path.replace(".xml", "_enriched.xml")
+    
+    try:
+        with open(output_path, 'w', encoding='utf-8') as out_file:
+            # XML Header
+            out_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            out_file.write('<collection xmlns:marc="http://www.loc.gov/MARC21/slim">\n')
+            out_file.write(f'<!-- Angereichert am {datetime.now().strftime("%d.%m.%Y %H:%M:%S")} -->\n')
+            out_file.write(f'<!-- {len(isbn_meta_cache):,} von {len(isbn_map):,} ISBNs mit Metadaten angereichert -->\n\n')
+            
+            # Zweiter iterativer Durchlauf - mit Anreicherung
+            record_position = 0  # Alle Records in Datei
+            isbn_record_position = 0  # Nur Records mit ISBN (= stats['processed_records'])
+            enriched_count = 0
+            
+            for event, elem in ET.iterparse(xml_path, events=('end',)):
+                if elem.tag != 'record':
+                    continue
+                
+                record_position += 1
+                
+                if record_position % 50000 == 0:
+                    print(f"   {record_position:,} / {total_records_in_file:,} verarbeitet ({enriched_count:,} angereichert)...")
+                
+                # Suche ISBN für diesen Record
+                current_isbn = None
+                for datafield in elem.findall("datafield"):
+                    if datafield.get("tag") == "020":
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == "a" and subfield.text:
+                                current_isbn = subfield.text.strip()
+                                break
+                    if current_isbn:
+                        break
+                
+                # Anreichern wenn ISBN vorhanden UND Metadaten verfügbar
+                has_changes = False
+                if current_isbn and current_isbn in isbn_map:
+                    # Zähle nur Records mit ISBN für Progress
+                    isbn_record_position += 1
+                    
+                    if current_isbn in isbn_meta_cache:
+                        norm13, meta = isbn_meta_cache[current_isbn]
+                        
+                        # Inline-Anreicherung (direkt am ET.Element)
+                        has_changes = _enrich_record_inline(
+                            isbn_record_position, elem, current_isbn, norm13, meta,
+                            stats, use_tqdm
+                        )
+                        
+                        if has_changes:
+                            enriched_count += 1
+                
+                # Schreibe Record (angereichert oder unverändert)
+                record_str = ET.tostring(elem, encoding='unicode')
+                out_file.write(record_str + '\n')
+                
+                # Element aus Speicher entfernen
+                elem.clear()
+                # Note: Weitere Speicherbereinigung nicht nötig bei ET.iterparse
+                
+                # Abbruchprüfung
+                if check_cancelled and check_cancelled():
+                    stats['cancelled'] = True
+                    out_file.write('</collection>\n')
+                    print("\n⛔ Vom Benutzer abgebrochen!")
+                    return stats
+                
+                # GUI-Update (nur für Records mit ISBN)
+                if progress_callback and isbn_record_position > 0 and isbn_record_position % 100 == 0:
+                    try:
+                        progress_callback(
+                            isbn_record_position, enriched_count, stats['failed_enrichments'],
+                            stats['rate_limit_retry_1'], stats['rate_limit_retry_2'], stats['rate_limit_retry_3'],
+                            stats['isbn_not_found'], stats['conflicts_skipped'],
+                            total=len(isbn_map)
+                        )
+                    except TypeError:
+                        # Fallback für alte Signatur
+                        progress_callback(
+                            isbn_record_position, enriched_count, stats['failed_enrichments'],
+                            stats['rate_limit_retry_1'], stats['rate_limit_retry_2'], stats['rate_limit_retry_3'],
+                            stats['isbn_not_found'], stats['conflicts_skipped']
+                        )
+            
+            # XML Footer
+            out_file.write('</collection>\n')
+        
+        stats['successful_enrichments'] = enriched_count
+        stats['processed_records'] = isbn_record_position  # Nur Records mit ISBN
+        stats['output_path'] = output_path  # WICHTIG: Statt 'tree' für start.py
+        
+        print(f"\n✅ Fertig! {enriched_count:,} von {record_position:,} Records angereichert")
+        print(f"   Ausgabedatei: {output_path}")
+        
+    except Exception as e:
+        print(f"\n❌ Fehler beim Schreiben: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    
+    # Zusammenfassung
     print("\n=== Zusammenfassung ===")
-    print(f"Verarbeitete Records: {stats['processed_records']}")
-    print(f"Erfolgreiche Anreicherungen: {stats['successful_enrichments']}")
-    print(f"Fehler: {stats['failed_enrichments']}")
-    print(f"Rate-Limit Retries (1/3): {stats['rate_limit_retry_1']}")
-    print(f"Rate-Limit Retries (2/3): {stats['rate_limit_retry_2']}")
-    print(f"Rate-Limit Retries (3/3): {stats['rate_limit_retry_3']}")
-    print(f"ISBN nicht gefunden: {stats['isbn_not_found']}")
-    print(f"Konflikte übersprungen: {stats['conflicts_skipped']}")
-    print("\nProtokoll der Änderungen:")
-    for entry in change_log:
-        print(entry)
+    print(f"Verarbeitete Records: {stats['processed_records']:,}")
+    print(f"Erfolgreiche Anreicherungen: {stats['successful_enrichments']:,}")
+    print(f"Fehler: {stats['failed_enrichments']:,}")
+    print(f"Rate-Limit Retries: {stats['rate_limit_retry_1'] + stats['rate_limit_retry_2'] + stats['rate_limit_retry_3']:,}")
+    print(f"ISBN nicht gefunden: {stats['isbn_not_found']:,}")
+    print(f"Konflikte übersprungen: {stats['conflicts_skipped']:,}")
     
     return stats
 
