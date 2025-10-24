@@ -110,6 +110,61 @@ def similarity(a, b):
     # Levenshtein-Ähnlichkeit
     return difflib.SequenceMatcher(None, a, b).ratio()
 
+def convert_author_to_marc_format(api_author, marc_author):
+    """
+    Konvertiert API-Autorennamen (Vorname Nachname) zu MARC-Format (Nachname, Vorname).
+    Intelligent: Nur wenn MARC-Eintrag eine Abkürzung ist (z.B. "Nachname, V." oder "Nachname, Max" wenn API "Maximilian" hat).
+    
+    Args:
+        api_author: z.B. "Gotthold Ephraim Lessing" von API
+        marc_author: z.B. "Lessing, Gotthold Ephraim" oder "Lessing, G. E." oder "Lessing, Max" aus MARC
+        
+    Returns:
+        Konvertierter Name im MARC-Format oder None wenn keine Konvertierung nötig
+    """
+    if not api_author or not marc_author:
+        return None
+    
+    # Wenn MARC kein Komma hat, unterschiedliches Format
+    if ',' not in marc_author:
+        # MARC hat kein Komma -> unterschiedliches Format, versuche Konvertierung
+        parts = api_author.strip().split()
+        if len(parts) >= 2:
+            # Annahme: Letztes Wort ist Nachname
+            lastname = parts[-1]
+            firstname = " ".join(parts[:-1])
+            return f"{lastname}, {firstname}"
+        return None
+    
+    # Extrahiere Nachname und Vorname aus MARC (vor/nach dem Komma)
+    marc_parts = marc_author.split(',', 1)
+    marc_lastname = marc_parts[0].strip()
+    marc_firstname = marc_parts[1].strip() if len(marc_parts) > 1 else ""
+    
+    # Extrahiere Nachname und Vorname aus API
+    api_parts = api_author.strip().split()
+    if len(api_parts) < 2:
+        return None
+    
+    api_lastname = api_parts[-1]
+    api_firstname = " ".join(api_parts[:-1])
+    
+    # Prüfe ob der Nachname übereinstimmt
+    if marc_lastname.lower() != api_lastname.lower():
+        # Unterschiedliche Nachnamen -> nicht konvertieren
+        return None
+    
+    # Prüfe ob Vorname in MARC eine Abkürzung ist (Punkt ODER Längen-Abkürzung)
+    has_point_abbreviation = '.' in marc_firstname
+    has_length_abbreviation = is_abbreviation(marc_firstname, api_firstname)
+    
+    if not has_point_abbreviation and not has_length_abbreviation:
+        # MARC-Vorname ist bereits vollständig
+        return None
+    
+    # Baue MARC-Format mit vollständigem Vornamen von API
+    return f"{marc_lastname}, {api_firstname}"
+
 def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, use_tqdm, progress_callback):
     """
     Reichert einen einzelnen Record mit ISBN-Metadaten an.
@@ -214,6 +269,37 @@ def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, us
             meta_value = ", ".join(meta_value)
         if not meta_value:
             continue
+        
+        # SPEZIAL: Authors - Intelligente Format-Behandlung
+        if key == "Authors" and meta_value and marc_value:
+            # Prüfe ob MARC vollständig ist (keine Abkürzung mit Punkt UND keine Längen-Abkürzung)
+            if ',' in marc_value:
+                # Extrahiere Vorname aus MARC
+                marc_parts = marc_value.split(',', 1)
+                marc_firstname = marc_parts[1].strip() if len(marc_parts) > 1 else ""
+                
+                # Extrahiere Vorname aus API (nach Konvertierung zu MARC-Format)
+                api_parts = meta_value.strip().split()
+                if len(api_parts) >= 2:
+                    api_firstname = " ".join(api_parts[:-1])
+                    
+                    # Prüfe ob Abkürzung vorliegt (Punkt ODER Länge)
+                    has_point_abbreviation = '.' in marc_firstname
+                    has_length_abbreviation = is_abbreviation(marc_firstname, api_firstname)
+                    
+                    if not has_point_abbreviation and not has_length_abbreviation:
+                        # MARC ist vollständig -> überspringen
+                        continue
+            
+            # MARC hat Abkürzung oder falsches Format -> konvertiere API zu MARC-Format
+            converted_author = convert_author_to_marc_format(meta_value, marc_value)
+            if converted_author:
+                # Konvertierung erfolgreich -> verwende MARC-formatierte Version
+                meta_value = converted_author
+            else:
+                # Konvertierung fehlgeschlagen (z.B. unterschiedliche Nachnamen) -> überspringen
+                continue
+        
         # Keine Aktion wenn identisch
         if marc_value is not None and str(marc_value).strip() == str(meta_value).strip():
             continue
@@ -222,6 +308,16 @@ def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, us
             if sub_code and (marc_subfield is not None):
                 stats['field_stats'][key]['empty_before'] += 1
                 stats['field_stats'][key]['filled_after'] += 1
+                
+                # Bei Authors: Konvertiere Format
+                if key == "Authors":
+                    # API liefert "Vorname Nachname", konvertiere zu "Nachname, Vorname"
+                    parts = meta_value.strip().split()
+                    if len(parts) >= 2 and ',' not in meta_value:
+                        lastname = parts[-1]
+                        firstname = " ".join(parts[:-1])
+                        meta_value = f"{lastname}, {firstname}"
+                
                 marc_subfield.text = meta_value
                 msg = f"[{idx}] {key}: Leeres Feld befüllt mit '{meta_value}'"
                 change_log.append(msg)
