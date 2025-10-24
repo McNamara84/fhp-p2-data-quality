@@ -122,16 +122,44 @@ def _enrich_single_record(idx, record, isbn, norm13, meta, stats, change_log, us
     for key, (marc_tag, sub_code) in ISBNLIB_MARC_MAP.items():
         marc_value = None
         marc_subfield = None
-        for datafield in record.findall("datafield"):
-            if datafield.get("tag") == marc_tag:
-                if sub_code:
+        
+        # Spezialbehandlung für Titel: Kombiniere Subfield 'a' + 'b' für vollständigen Vergleich
+        if key == "Title" and marc_tag == "245":
+            for datafield in record.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    subfield_a = None
+                    subfield_b = None
+                    subfield_a_elem = None
+                    
                     for subfield in datafield.findall("subfield"):
-                        if subfield.get("code") == sub_code:
-                            marc_value = subfield.text.strip() if subfield.text else ""
-                            marc_subfield = subfield
-                            break
-                else:
-                    marc_value = None  # Sonderfall
+                        if subfield.get("code") == "a":
+                            subfield_a = subfield.text.strip() if subfield.text else ""
+                            subfield_a_elem = subfield
+                        elif subfield.get("code") == "b":
+                            subfield_b = subfield.text.strip() if subfield.text else ""
+                    
+                    # Kombiniere a + b für vollständigen Titel (wie API ihn liefert)
+                    if subfield_a:
+                        # Entferne Doppelpunkt am Ende von subfield_a wenn vorhanden
+                        title_parts = [subfield_a.rstrip(':').rstrip()]
+                        if subfield_b:
+                            title_parts.append(subfield_b)
+                        marc_value = " - ".join(title_parts)  # Trennzeichen wie API (meist " - ")
+                        marc_subfield = subfield_a_elem  # Zeiger auf subfield 'a' für Änderungen
+                    break
+        else:
+            # Normale Verarbeitung für andere Felder
+            for datafield in record.findall("datafield"):
+                if datafield.get("tag") == marc_tag:
+                    if sub_code:
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == sub_code:
+                                marc_value = subfield.text.strip() if subfield.text else ""
+                                marc_subfield = subfield
+                                break
+                    else:
+                        marc_value = None  # Sonderfall
+        
         fields_info.append((key, marc_tag, sub_code, marc_value, marc_subfield))
 
     # 2) Konfliktquote prüfen
@@ -406,13 +434,35 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
             stats['field_stats'][key]['total_records'] += 1
             
             marc_value = None
-            for datafield in record.findall("datafield"):
-                if datafield.get("tag") == marc_tag:
-                    if sub_code:
+            
+            # Spezialbehandlung für Titel: Kombiniere Subfield 'a' + 'b'
+            if key == "Title" and marc_tag == "245":
+                for datafield in record.findall("datafield"):
+                    if datafield.get("tag") == marc_tag:
+                        subfield_a = None
+                        subfield_b = None
+                        
                         for subfield in datafield.findall("subfield"):
-                            if subfield.get("code") == sub_code:
-                                marc_value = subfield.text.strip() if subfield.text else ""
-                                break
+                            if subfield.get("code") == "a":
+                                subfield_a = subfield.text.strip() if subfield.text else ""
+                            elif subfield.get("code") == "b":
+                                subfield_b = subfield.text.strip() if subfield.text else ""
+                        
+                        if subfield_a:
+                            title_parts = [subfield_a.rstrip(':').rstrip()]
+                            if subfield_b:
+                                title_parts.append(subfield_b)
+                            marc_value = " - ".join(title_parts)
+                        break
+            else:
+                # Normale Verarbeitung für andere Felder
+                for datafield in record.findall("datafield"):
+                    if datafield.get("tag") == marc_tag:
+                        if sub_code:
+                            for subfield in datafield.findall("subfield"):
+                                if subfield.get("code") == sub_code:
+                                    marc_value = subfield.text.strip() if subfield.text else ""
+                                    break
             
             # Leer?
             if not marc_value or marc_value == "":
