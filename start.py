@@ -103,6 +103,13 @@ def run_enrichment(root: tk.Tk) -> None:
                     if result.get('tree'):
                         result['tree'].write(output_path, encoding='utf-8', xml_declaration=True)
                     
+                    # JSON-Statistiken exportieren
+                    json_path = None
+                    try:
+                        json_path = enrich_metadata.export_stats_to_json(result, xml_path, output_path)
+                    except Exception as e:
+                        print(f"Warnung: JSON-Export fehlgeschlagen: {e}")
+                    
                     def show_success():
                         try:
                             # Progress-Dialog schließen
@@ -111,10 +118,14 @@ def run_enrichment(root: tk.Tk) -> None:
                             # Statistik-Dialog anzeigen
                             show_statistics(root, result)
                             
-                            # Abschließende Bestätigung
+                            # Abschließende Bestätigung mit JSON-Info
+                            success_msg = f"Angereicherte Datei gespeichert:\n{output_path}"
+                            if json_path:
+                                success_msg += f"\n\nStatistiken exportiert:\n{json_path}"
+                            
                             messagebox.showinfo(
                                 "Erfolg",
-                                f"Angereicherte Datei gespeichert:\n{output_path}",
+                                success_msg,
                                 parent=root
                             )
                         except (tk.TclError, AttributeError) as e:

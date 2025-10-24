@@ -6,6 +6,8 @@ import time
 import logging
 import socket
 import threading
+import json
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.error import URLError
 try:
@@ -13,6 +15,17 @@ try:
 except ImportError:
     print("Das Paket 'isbnlib' ist nicht installiert. Bitte mit 'pip install isbnlib' nachinstallieren.")
     sys.exit(1)
+
+# DNB-Plugin importieren
+try:
+    import isbnlib_dnb  # noqa: F401
+    # DNB-Service verfügbar machen (registrieren ist nicht nötig, da als Plugin)
+    DNB_AVAILABLE = True
+    print("✓ isbnlib-dnb geladen - Deutsche Nationalbibliothek wird als Datenquelle verwendet")
+except ImportError:
+    DNB_AVAILABLE = False
+    print("⚠ isbnlib-dnb nicht gefunden - Standard-Services werden verwendet")
+    print("  Hinweis: Für bessere Ergebnisse bei deutschsprachiger Literatur installieren Sie 'pip install isbnlib-dnb'")
 
 # Konfiguration: Schwellenwerte für Korrekturen
 LEVENSHTEIN_THRESHOLD = 0.7  # Ähnlichkeitsschwelle für Korrekturen (0-1)
@@ -230,14 +243,41 @@ def fetch_isbn_metadata(idx, isbn):
     meta = None
     error_msg = None
     retry_attempt = 0  # Welcher Retry-Versuch war erfolgreich (0 = erster Versuch erfolgreich, 1-3 = welcher Retry)
+    # Versuche Meta-Daten von mehreren Services (DNB bevorzugt, dann Fallbacks)
+    services_to_try = ['default', 'goob', 'openl', 'wiki']
+    if DNB_AVAILABLE:
+        # DNB zuerst, dann die anderen
+        services_to_try.insert(0, 'dnb')
+
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             # Globalen Rate-Limiter respektieren (vor JEDEM Versuch)
-            _acquire_rate_slot()
-            meta = isbnlib.meta(norm13)
-            isbn_cache[norm13] = meta
-            break
+            # Wir holen für jeden Service separat einen Slot.
+            for svc in services_to_try:
+                _acquire_rate_slot()
+                try:
+                    meta = isbnlib.meta(norm13, service=svc)
+                except Exception as e_meta:
+                    # Wenn ein Service einen expliziten Fehler wirft, loggen und zum nächsten Service
+                    logger.debug(f"Service {svc} Fehler für ISBN {norm13}: {e_meta}")
+                    meta = None
+
+                # Wenn Meta gefunden, abbrechen
+                if meta:
+                    isbn_cache[norm13] = meta
+                    break
+
+            # Wenn Meta gefunden wurde, beende die Retry-Schleife
+            if meta:
+                retry_attempt = 0 if attempt == 1 else retry_attempt
+                break
         except (URLError, socket.timeout) as e:
+            retry_attempt = attempt  # Markiere, dass ein Retry nötig war
+            wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+            error_msg = f"Netzwerkfehler (Versuch {attempt}/{MAX_RETRIES}): {e}"
+            time.sleep(wait)
+        except (URLError, socket.timeout) as e:
+            # Netzwerkfehler behandeln (wie vorher)
             retry_attempt = attempt  # Markiere, dass ein Retry nötig war
             wait = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
             error_msg = f"Netzwerkfehler (Versuch {attempt}/{MAX_RETRIES}): {e}"
@@ -245,13 +285,17 @@ def fetch_isbn_metadata(idx, isbn):
         except Exception as e:
             # Bei 429 (Rate Limit) längere Wartezeit
             if "429" in str(e) or "many requests" in str(e).lower():
-                retry_attempt = attempt  # Markiere, dass ein Retry nötig war
+                retry_attempt = attempt  # Markiere, dass einRetry nötig war
                 wait = BACKOFF_BASE_SECONDS * (3 ** attempt)  # Exponentiell länger
                 error_msg = f"Rate Limit (429) erreicht (Versuch {attempt}/{MAX_RETRIES})"
                 time.sleep(wait)
             else:
                 error_msg = f"Fehler: {e}"
                 break
+
+    # Wenn nach allen Versuchen kein Meta gefunden wurde, setze passenden Fehler
+    if not meta and not error_msg:
+        error_msg = "ISBN nicht gefunden oder keine Metadaten verfügbar"
 
     return idx, norm13, meta, error_msg, retry_attempt
 
@@ -481,6 +525,70 @@ def main(xml_path, progress_callback=None, check_cancelled=None):
         print(entry)
     
     return stats
+
+
+def export_stats_to_json(stats: dict, xml_path: str, output_path: str) -> str:
+    """
+    Exportiert Statistiken in eine JSON-Datei.
+    
+    Args:
+        stats: Dictionary mit allen Statistiken
+        xml_path: Pfad zur Eingabe-XML-Datei
+        output_path: Pfad zur Ausgabe-XML-Datei
+        
+    Returns:
+        Pfad zur erstellten JSON-Datei
+    """
+    json_path = output_path.replace(".xml", "_stats.json")
+    
+    # Erstelle exportierbare Struktur (ohne tree und change_log für kompakte JSON)
+    export_data = {
+        "metadata": {
+            "timestamp": datetime.now().isoformat(),
+            "input_file": os.path.basename(xml_path),
+            "output_file": os.path.basename(output_path),
+            "total_records_in_file": stats.get('total_records', 0),
+        },
+        "summary": {
+            "processed_records": stats.get('processed_records', 0),
+            "successful_enrichments": stats.get('successful_enrichments', 0),
+            "failed_enrichments": stats.get('failed_enrichments', 0),
+            "isbn_not_found": stats.get('isbn_not_found', 0),
+            "conflicts_skipped": stats.get('conflicts_skipped', 0),
+            "multi_isbn_warnings": stats.get('multi_isbn_warnings', 0),
+        },
+        "retry_statistics": {
+            "rate_limit_retry_1": stats.get('rate_limit_retry_1', 0),
+            "rate_limit_retry_2": stats.get('rate_limit_retry_2', 0),
+            "rate_limit_retry_3": stats.get('rate_limit_retry_3', 0),
+            "total_retries": (
+                stats.get('rate_limit_retry_1', 0) +
+                stats.get('rate_limit_retry_2', 0) +
+                stats.get('rate_limit_retry_3', 0)
+            ),
+        },
+        "field_statistics": stats.get('field_stats', {}),
+        "changes": {
+            "total_changes": len(stats.get('change_log', [])),
+            "change_log": stats.get('change_log', [])[:100]  # Nur erste 100 für Übersicht
+        }
+    }
+    
+    # Success rate berechnen
+    if export_data['summary']['processed_records'] > 0:
+        export_data['summary']['success_rate_percent'] = round(
+            (export_data['summary']['successful_enrichments'] / 
+             export_data['summary']['processed_records']) * 100, 2
+        )
+    else:
+        export_data['summary']['success_rate_percent'] = 0.0
+    
+    # JSON speichern
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(export_data, f, indent=2, ensure_ascii=False)
+    
+    print(f"\n✓ Statistiken exportiert nach: {json_path}")
+    return json_path
 
 if __name__ == "__main__":
     # Standarddatei, kann später per Argument angepasst werden
