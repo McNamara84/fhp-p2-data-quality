@@ -1,0 +1,97 @@
+ISIL,Status,Name
+DE-099,ERROR_list index out of range,
+DE-106,VALID,Städtische Bibliotheken Dresden
+DE-109,VALID,"Zentral- und Landesbibliothek Berlin, Haus Amerika-Gedenkbibliothek und Haus Berliner Stadtbibliothek"
+DE-1104,VALID,Stadtbibliothek Radolfzell
+DE-1105,VALID,"Hochschule Koblenz, RheinAhrCampus, Bibliothek"
+DE-1108,VALID,Stadtbücherei Weener
+DE-111,VALID,Anhaltische Landesbücherei Dessau (Wissenschaftliche Bibliothek)
+DE-1136,VALID,Gemeindebibliothek Hoppegarten
+DE-1263,VALID,"Kupferschmiede Beeskow e.V., Stadtbibliothek"
+DE-1264,VALID,Gemeindebibliothek Glienicke/Nordbahn
+DE-1265,VALID,"Bibliothek Lübbenau - Vetschau, Ausleihstelle Lübbenau"
+DE-1266,VALID,See-Campus-Bibliothek
+DE-1267,VALID,Stadtbibliothek Großräschen
+DE-1268,VALID,Gemeindebibliothek Blankenfelde-Mahlow
+DE-1269,VALID,Stadtbibliothek Pritzwalk
+DE-1270,VALID,"Stadtbibliothek ""Ulrich Plenzdorf"" Seelow"
+DE-1271,VALID,Bibliothek Neuenhagen
+DE-1308,VALID,Stadtbücherei Neuötting
+DE-1313,VALID,Stadtbücherei Simbach a. Inn
+DE-1314,VALID,Gemeindebücherei Tutzing
+DE-1342,VALID,Stadtbibliothek Werder (Havel)
+DE-1349,VALID,Öffentliche Bibliothek Kleinmachnow
+DE-139,VALID,Stadt- und Regionalbibliothek Frankfurt (Oder)
+DE-141,VALID,Stadtbibliothek Guben
+DE-1847,VALID,Öffentliche Schulbibliothek Oberkrämer
+DE-1848,VALID,Stadtbibliothek Storkow
+DE-201,VALID,"Deutsches Patent- und Markenamt, Ref. 2.2.4, Bibliothek"
+DE-202,ERROR_list index out of range,
+DE-206,VALID,"ZBW - Leibniz-Informationszentrum Wirtschaft, Standort Kiel"
+DE-211,VALID,Erzbischöfliche Akademische Bibliothek Paderborn
+DE-213,ERROR_list index out of range,
+DE-301,ERROR_list index out of range,
+DE-304,ERROR_list index out of range,
+DE-305,ERROR_list index out of range,
+DE-306,ERROR_list index out of range,
+DE-307,ERROR_list index out of range,
+DE-308,ERROR_list index out of range,
+DE-311,ERROR_list index out of range,
+DE-314,ERROR_list index out of range,
+DE-315,ERROR_list index out of range,
+DE-317,ERROR_list index out of range,
+DE-404,ERROR_list index out of range,
+DE-411,VALID,Stadtbücherei Coesfeld
+DE-501,VALID,Stadtbibliothek Kyritz
+DE-502,VALID,Stadtbibliothek Zossen
+DE-504,VALID,Fouqué-Bibliothek Brandenburg
+DE-505,VALID,Stadtbibliothek Jüterbog
+DE-506,VALID,Kreismedienzentrum Teltow-Fläming
+DE-506a,VALID,Stadtbibliothek Luckenwalde
+DE-508,VALID,Stadtbibliothek Oranienburg
+DE-510,VALID,Bibliothek im Kontor Wittstock
+DE-511,VALID,Stadtbibliothek Königs Wusterhausen
+DE-512,VALID,Stadtbibliothek Gransee
+DE-513,VALID,Stadtbibliothek Neuruppin
+DE-514,VALID,Stadtbibliothek Rathenow
+DE-516,VALID,Stadtbibliothek Neustadt/Sachsen
+DE-518,VALID,Stadtbücherei Weimar
+DE-519,VALID,"Hochschule Neubrandenburg, Bibliothek"
+DE-520,VALID,"Hochschule für Technik und Wirtschaft Dresden, Bibliothek"
+DE-522,VALID,"Technische Hochschule Brandenburg, Hochschulbibliothek"
+DE-529,VALID,Stadtbibliothek Calau
+DE-530,VALID,Stadtbibliothek Falkensee
+DE-532,VALID,"Stadtbibliothek ""Im Alten Bahnhof"" Hennigsdorf"
+DE-533,VALID,Stadtbibliothek Ludwigsfelde
+DE-534,VALID,Heinrich-Mann-Bibliothek / Stadtbibliothek
+DE-535,VALID,BONA Stadtbibliothek Perleberg
+DE-537,VALID,Stadtbibliothek Zehdenick
+DE-554,VALID,Kreisbibliothek Havelland Rathenow
+DE-616,VALID,Arbeitsgemeinschaft Niedersächsischer Behördenbibliotheken
+DE-709,VALID,Stadtbibliothek Hennef
+DE-710,VALID,"Heinrich-Heine-Institut, Bibliothek"
+DE-711,ERROR_list index out of range,
+DE-801,VALID,Stadtbücherei Sprockhövel
+DE-808,VALID,Stadtbücherei Vlotho
+DE-810,VALID,"Kreisarchiv Warendorf, Bibliothek"
+DE-815,VALID,Stadtbücherei Wiehl
+DE-901,VALID,Bücherei Seevetal
+DE-904,VALID,Medienhaus am See
+DE-906,VALID,Stadtbücherei Ebern
+DE-910,VALID,Stadtbücherei Lindau/Bodensee
+DE-911,VALID,Gemeindebibliothek Elsenfeld
+DE-913,VALID,Stadtbibliothek Röthenbach
+DE-Ber7,VALID,Stadtbibliothek Bernau bei Berlin
+DE-Co22,VALID,Mediathek Herzberg
+DE-Eb21,VALID,Stadtbibliothek Eberswalde
+DE-Eh4,VALID,Stadtbibliothek Eisenhüttenstadt
+DE-For3,VALID,Stadtbibliothek Forst (Lausitz)
+DE-Fur5,VALID,Stadtbibliothek Fürstenwalde
+DE-Fw2,VALID,"Stadt- und Kreisbibliothek ""Hans Keilson"""
+DE-Lbn3,VALID,Stadtbibliothek Lübben
+DE-Pr3,VALID,Stadtbibliothek (im Dominikanerkloster)
+DE-Sen5,VALID,Stadtbibliothek Senftenberg
+DE-Sht10,VALID,Stadtbibliothek Schwedt
+DE-Spr10,VALID,Kreisbibliothek des Landkreises Spree-Neiße
+DE-Te3,VALID,Stadtbibliothek Templin
+DE-Wbe4,VALID,Stadtbibliothek 'Martin Andersen Nexö' Wittenberge
