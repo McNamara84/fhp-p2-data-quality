@@ -321,6 +321,21 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
                     <h2>Metadatenelement: Title - Gesamtwirkung der Anreicherung</h2>
                     <img src="/charts/title_total_impact.png" alt="Title Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Authors - Leere Felder befüllen</h2>
+                    <img src="/charts/authors_enrichment.png" alt="Authors Anreicherung - Leere Felder" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Authors - Abkürzungen ausschreiben & Fehler korrigieren</h2>
+                    <img src="/charts/authors_corrections.png" alt="Authors Korrekturen" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Authors - Gesamtwirkung der Anreicherung</h2>
+                    <img src="/charts/authors_total_impact.png" alt="Authors Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
             `;
         }
     </script>

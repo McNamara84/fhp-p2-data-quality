@@ -254,6 +254,180 @@ ggsave(
 cat("✓ Diagramm erstellt:", output_file_3, "\n")
 
 # ============================================================
+# METADATENELEMENT: AUTHORS
+# ============================================================
+
+# Daten für Authors
+authors_stats <- field_stats$Authors
+
+# ============================================================
+# Diagramm 4: Authors - Leere Felder befüllen
+# ============================================================
+
+authors_empty_before <- authors_stats$empty_before
+authors_filled_after <- authors_stats$filled_after
+
+authors_data <- data.frame(
+  Kategorie = factor(
+    c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt"),
+    levels = c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt")
+  ),
+  Anzahl = c(total_records_val, records_with_isbn_val, authors_empty_before, authors_filled_after)
+)
+
+p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Gesamt" = "#667eea",
+    "Mit ISBN" = "#764ba2", 
+    "Leer vorher" = "#e74c3c",
+    "Befüllt" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Authors",
+    subtitle = "Anreicherung leerer Felder",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_4 <- file.path(output_dir, "authors_enrichment.png")
+ggsave(output_file_4, plot = p4, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_4, "\n")
+
+# ============================================================
+# Diagramm 5: Authors - Abkürzungen und Korrekturen
+# ============================================================
+
+authors_abbreviations <- authors_stats$abbreviation_replaced
+authors_corrections <- authors_stats$corrected
+authors_abbrev_and_errors <- authors_abbreviations + authors_corrections
+
+authors_corrections_data <- data.frame(
+  Kategorie = factor(
+    c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+  ),
+  Anzahl = c(total_records_val, records_with_isbn_val, authors_abbrev_and_errors, authors_abbrev_and_errors)
+)
+
+p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Gesamt" = "#667eea",
+    "Mit ISBN" = "#764ba2", 
+    "Abgekürzt/Fehler vorher" = "#e67e22",
+    "Ausgeschrieben/korrigiert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Authors",
+    subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_5 <- file.path(output_dir, "authors_corrections.png")
+ggsave(output_file_5, plot = p5, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_5, "\n")
+
+# ============================================================
+# Diagramm 6: Authors - Gesamtwirkung
+# ============================================================
+
+authors_total_enriched <- authors_filled_after + authors_abbrev_and_errors
+
+authors_total_data <- data.frame(
+  Kategorie = factor(
+    c("Gesamt", "Mit ISBN", "Angereichert"),
+    levels = c("Gesamt", "Mit ISBN", "Angereichert")
+  ),
+  Anzahl = c(total_records_val, records_with_isbn_val, authors_total_enriched)
+)
+
+p6 <- ggplot(authors_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Gesamt" = "#667eea",
+    "Mit ISBN" = "#764ba2", 
+    "Angereichert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Authors",
+    subtitle = "Gesamtwirkung der Anreicherung",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_6 <- file.path(output_dir, "authors_total_impact.png")
+ggsave(output_file_6, plot = p6, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_6, "\n")
+
+# ============================================================
 # Weitere Diagramme können hier hinzugefügt werden
 # ============================================================
 
