@@ -3,7 +3,174 @@ import sys
 import subprocess
 import threading
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, filedialog
+from enrichment_dialog import EnrichmentProgressDialog
+from statistics_dialog import show_statistics
+
+
+def run_enrichment(root: tk.Tk) -> None:
+    """Startet die Metadaten-Anreicherung mit GUI-Dialog."""
+    
+    # Datei-Auswahl
+    xml_path = filedialog.askopenfilename(
+        parent=root,
+        title="XML-Datei für Anreicherung auswählen",
+        filetypes=[("XML-Dateien", "*.xml"), ("Alle Dateien", "*.*")],
+        initialdir=os.path.dirname(__file__)
+    )
+    
+    if not xml_path:
+        return
+    
+    # Prüfen, ob Datei existiert
+    if not os.path.exists(xml_path):
+        messagebox.showerror("Fehler", f"Datei nicht gefunden: {xml_path}", parent=root)
+        return
+    
+    # Anzahl ISBNs ermitteln (nur für kleine Dateien, sonst schätzen)
+    isbn_count = None  # None = unbekannt (wird während Pass 1 ermittelt)
+    
+    try:
+        file_size_mb = os.path.getsize(xml_path) / (1024 * 1024)
+        
+        # Nur für kleine Dateien (<100MB) vorab zählen
+        if file_size_mb < 100:
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(xml_path)
+            root_elem = tree.getroot()
+            
+            # ISBNs zählen
+            isbn_count = 0
+            for record in root_elem.findall("record"):
+                for datafield in record.findall("datafield"):
+                    if datafield.get("tag") == "020":
+                        for subfield in datafield.findall("subfield"):
+                            if subfield.get("code") == "a" and subfield.text and subfield.text.strip():
+                                isbn_count += 1
+                                break  # Nur erste ISBN pro Record
+                        break  # Nur erstes datafield 020
+            
+            if isbn_count == 0:
+                messagebox.showwarning(
+                    "Keine ISBNs gefunden",
+                    "Die ausgewählte Datei enthält keine ISBNs (Feld 020$a).",
+                    parent=root
+                )
+                return
+        else:
+            # Für große Dateien: Unbekannte Anzahl (wird in Pass 1 ermittelt)
+            print(f"Große Datei ({file_size_mb:.0f} MB) - ISBN-Anzahl wird während Verarbeitung ermittelt")
+            isbn_count = None
+            
+    except Exception as e:
+        messagebox.showerror("Fehler", f"Fehler beim Analysieren der Datei:\n{e}", parent=root)
+        return
+    
+    # Progress-Dialog erstellen
+    cancelled = False
+    
+    def check_cancelled():
+        return cancelled
+    
+    def on_cancel():
+        nonlocal cancelled
+        cancelled = True
+    
+    progress_dialog = EnrichmentProgressDialog(root, isbn_count, on_cancel=on_cancel)
+    
+    def run_enrichment_thread():
+        result = None
+        try:
+            # Importiere enrich_metadata lokal, um Circular Import zu vermeiden
+            import enrich_metadata
+            
+            # Callback für Progress-Updates
+            def progress_callback(processed, successful, failed, retry_1, retry_2, retry_3, isbn_not_found, conflicts_skipped, total=None):
+                if not cancelled:  # Nur Updates senden, wenn nicht abgebrochen
+                    try:
+                        root.after(0, lambda p=processed, s=successful, f=failed, r1=retry_1, r2=retry_2, r3=retry_3, i=isbn_not_found, c=conflicts_skipped, t=total: 
+                            progress_dialog.update_progress(p, s, f, r1, r2, r3, i, c, total=t))
+                    except (tk.TclError, AttributeError):
+                        pass
+            
+            # Enrichment durchführen
+            result = enrich_metadata.main(xml_path, progress_callback=progress_callback, check_cancelled=check_cancelled)
+            
+            if result:
+                if result.get('cancelled'):
+                    def show_cancel():
+                        try:
+                            progress_dialog.mark_complete(
+                                success=False,
+                                message="Die Anreicherung wurde abgebrochen."
+                            )
+                        except (tk.TclError, AttributeError):
+                            pass
+                    root.after(0, show_cancel)
+                else:
+                    # Erfolgreich
+                    output_path = xml_path.replace(".xml", "_enriched.xml")
+                    
+                    # Datei speichern (je nach return-Format)
+                    if result.get('output_path'):
+                        # Iteratives Parsing: Datei wurde bereits geschrieben
+                        output_path = result.get('output_path')
+                    elif result.get('tree'):
+                        # Altes Format: Tree zurückgegeben (Backward-Kompatibilität)
+                        result['tree'].write(output_path, encoding='utf-8', xml_declaration=True)
+                    
+                    # JSON-Statistiken exportieren
+                    json_path = None
+                    try:
+                        json_path = enrich_metadata.export_stats_to_json(result, xml_path, output_path)
+                    except Exception as e:
+                        print(f"Warnung: JSON-Export fehlgeschlagen: {e}")
+                    
+                    def show_success():
+                        try:
+                            # Progress-Dialog schließen
+                            progress_dialog.dialog.destroy()
+                            
+                            # Statistik-Dialog anzeigen
+                            show_statistics(root, result)
+                            
+                            # Abschließende Bestätigung mit JSON-Info
+                            success_msg = f"Angereicherte Datei gespeichert:\n{output_path}"
+                            if json_path:
+                                success_msg += f"\n\nStatistiken exportiert:\n{json_path}"
+                            
+                            messagebox.showinfo(
+                                "Erfolg",
+                                success_msg,
+                                parent=root
+                            )
+                        except (tk.TclError, AttributeError) as e:
+                            print(f"Fehler beim Anzeigen der Statistiken: {e}")
+                    root.after(0, show_success)
+            else:
+                def show_error():
+                    try:
+                        progress_dialog.mark_complete(
+                            success=False,
+                            message="Ein Fehler ist aufgetreten. Bitte prüfen Sie die Log-Datei."
+                        )
+                    except (tk.TclError, AttributeError):
+                        pass
+                root.after(0, show_error)
+        except Exception as e:
+            error_msg = f"Fehler bei der Anreicherung:\n{str(e)}"
+            def show_exception():
+                try:
+                    if progress_dialog.dialog.winfo_exists():
+                        messagebox.showerror("Fehler", error_msg, parent=progress_dialog.dialog)
+                    progress_dialog.mark_complete(success=False, message=error_msg)
+                except (tk.TclError, AttributeError):
+                    pass
+            root.after(0, show_exception)
+    
+    # Thread starten
+    thread = threading.Thread(target=run_enrichment_thread, daemon=True)
+    thread.start()
 
 
 def run_script(
@@ -71,6 +238,14 @@ def main() -> None:
             width=30,
             command=lambda s=script: run_script(root, progress_label, progress_bar, s),
         ).pack(pady=5)
+    
+    # Spezial-Button für Metadaten-Anreicherung mit eigenem Dialog
+    ttk.Button(
+        frm,
+        text="Metadaten anreichern",
+        width=30,
+        command=lambda: run_enrichment(root),
+    ).pack(pady=5)
 
     ttk.Button(
         frm,
