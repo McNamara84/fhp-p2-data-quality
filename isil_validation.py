@@ -22,10 +22,6 @@ for _, record in tqdm(context, desc="Lese XML", unit="record"):
                 if code.startswith("DE-"):
                     # 1. Entfernt 'V' oder 'V0' direkt nach 'DE-'
                     cleaned_code = re.sub(r"^DE-?V0?", "DE-", code)
-                    # 2. Entfernt alle unerlaubten Zeichen (., Leerzeichen, Komma, Semikolon usw.)
-                    cleaned_code = re.sub(r"[\\s.,;]+", "", cleaned_code)
-                    # 3. Entfernt doppelte oder fehlerhafte Minuszeichen am Ende
-                    cleaned_code = re.sub(r"-+$", "", cleaned_code)
                     isil_codes.add(cleaned_code)
     record.clear()
     while record.getprevious() is not None:
