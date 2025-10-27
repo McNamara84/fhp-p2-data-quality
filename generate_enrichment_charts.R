@@ -88,7 +88,7 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     plot.margin = margin(20, 20, 20, 20)
   ) +
   scale_y_continuous(
-    labels = function(x) format(x, big.mark = ".", decimal.mark = ","),
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
     expand = expansion(mult = c(0, 0.1))
   )
 
