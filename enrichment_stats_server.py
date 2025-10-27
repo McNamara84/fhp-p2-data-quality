@@ -316,6 +316,11 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
                     <h2>Metadatenelement: Title - Abkürzungen ausschreiben & Fehler korrigieren</h2>
                     <img src="/charts/title_corrections.png" alt="Title Korrekturen" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Title - Gesamtwirkung der Anreicherung</h2>
+                    <img src="/charts/title_total_impact.png" alt="Title Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
             `;
         }
     </script>

@@ -186,6 +186,74 @@ ggsave(
 cat("✓ Diagramm erstellt:", output_file_2, "\n")
 
 # ============================================================
+# Diagramm 3: Title - Gesamtwirkung der Anreicherung
+# ============================================================
+
+# Berechne Gesamtzahl angereicherter Datensätze
+total_enriched <- filled_after + abbreviations_and_errors_fixed  # 265 + 84.782
+
+# Erstelle Data Frame
+title_total_impact_data <- data.frame(
+  Kategorie = factor(
+    c("Gesamt", "Mit ISBN", "Angereichert"),
+    levels = c("Gesamt", "Mit ISBN", "Angereichert")
+  ),
+  Anzahl = c(total_records_val, records_with_isbn_val, total_enriched)
+)
+
+# Balkendiagramm erstellen
+p3 <- ggplot(title_total_impact_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  # Zahlen über den Balken
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Gesamt" = "#667eea",
+    "Mit ISBN" = "#764ba2", 
+    "Angereichert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Title",
+    subtitle = "Gesamtwirkung der Anreicherung",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+# Speichern als PNG
+output_file_3 <- file.path(output_dir, "title_total_impact.png")
+ggsave(
+  output_file_3,
+  plot = p3,
+  width = 12,
+  height = 10,
+  dpi = 300,
+  bg = "white"
+)
+
+cat("✓ Diagramm erstellt:", output_file_3, "\n")
+
+# ============================================================
 # Weitere Diagramme können hier hinzugefügt werden
 # ============================================================
 
