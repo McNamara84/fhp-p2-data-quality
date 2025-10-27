@@ -40,11 +40,15 @@ for code in tqdm(sorted(isil_codes), desc="Prüfe ISILs", unit="code"):
         if resp.status_code == 200:
             data = resp.json()
             bibliothek_name = data.get("member", [{}])[0].get("name", "") if "member" in data else ""
-            status = "VALID" if bibliothek_name else "UNKNOWN_NO_NAME"
+            status = "VALID ISILs" if bibliothek_name else "UNKNOWN_NO_NAME"
         else:
             status = f"HTTP_{resp.status_code}"
     except Exception as e:
         status = f"ERROR_{str(e)}"
+        # Hier die spezielle Ersetzung:
+        if "list index out of range" in status:
+            status = "INVALID ISILs"
+
     results.append({"ISIL": code, "Status": status, "Name": bibliothek_name})
     time.sleep(0.05)  # kleine Pause für API-Stabilität
 
