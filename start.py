@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import threading
+import webbrowser
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 from enrichment_dialog import EnrichmentProgressDialog
@@ -173,6 +174,173 @@ def run_enrichment(root: tk.Tk) -> None:
     thread.start()
 
 
+def show_enrichment_statistics(root: tk.Tk) -> None:
+    """Startet einen Webserver und öffnet die Anreicherungsstatistik im Browser."""
+    
+    # Prüfe ob Statistik-Dateien existieren
+    stats_file = os.path.join(os.path.dirname(__file__), "voebvoll-20241027_enriched_stats.json")
+    
+    if not os.path.exists(stats_file):
+        messagebox.showerror(
+            "Fehler",
+            "Statistik-Datei nicht gefunden.\nBitte führen Sie zuerst die Metadaten-Anreicherung durch.",
+            parent=root
+        )
+        return
+    
+    # Erstelle Output-Verzeichnis für Diagramme
+    output_dir = os.path.join(os.path.dirname(__file__), "enrichment_charts")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # R-Script Pfad
+    r_script = os.path.join(os.path.dirname(__file__), "generate_enrichment_charts.R")
+    
+    # Prüfe ob R installiert ist und finde Rscript.exe
+    rscript_paths = [
+        "Rscript",  # Im PATH
+        r"C:\Program Files\R\R-4.5.1\bin\Rscript.exe",  # Standard Windows Installation
+        r"C:\Program Files\R\R-4.4.1\bin\Rscript.exe",
+        r"C:\Program Files\R\R-4.3.1\bin\Rscript.exe",
+    ]
+    
+    rscript_cmd = None
+    for path in rscript_paths:
+        try:
+            result = subprocess.run(
+                [path, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                rscript_cmd = path
+                break
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    
+    if not rscript_cmd:
+        messagebox.showerror(
+            "R nicht gefunden",
+            "R ist nicht installiert oder nicht im PATH.\n\n"
+            "Bitte installieren Sie R 4.5.1 oder höher:\n"
+            "https://cran.r-project.org/",
+            parent=root
+        )
+        return
+    
+    # Generiere Diagramme im Hintergrund
+    def generate_charts():
+        try:
+            # Führe R-Script aus
+            result = subprocess.run(
+                [rscript_cmd, r_script, stats_file, output_dir],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode != 0:
+                error_msg = f"R-Script Fehler:\n{result.stderr}"
+                root.after(0, lambda: messagebox.showerror("Fehler", error_msg, parent=root))
+                return False
+            
+            print(result.stdout)  # R-Script Ausgabe
+            return True
+            
+        except subprocess.TimeoutExpired:
+            root.after(0, lambda: messagebox.showerror(
+                "Fehler",
+                "R-Script Timeout: Diagramm-Generierung dauert zu lange.",
+                parent=root
+            ))
+            return False
+        except Exception as e:
+            error_msg = f"Fehler beim Generieren der Diagramme:\n{e}"
+            root.after(0, lambda msg=error_msg: messagebox.showerror(
+                "Fehler",
+                msg,
+                parent=root
+            ))
+            return False
+    
+    # Status-Dialog
+    status_dialog = tk.Toplevel(root)
+    status_dialog.title("Generiere Diagramme...")
+    status_dialog.geometry("400x150")
+    status_dialog.transient(root)
+    status_dialog.grab_set()
+    
+    status_label = ttk.Label(
+        status_dialog,
+        text="Generiere Diagramme mit R...\nBitte warten...",
+        font=('Arial', 11)
+    )
+    status_label.pack(pady=30)
+    
+    status_progress = ttk.Progressbar(status_dialog, mode="indeterminate", length=300)
+    status_progress.pack(pady=10)
+    status_progress.start(10)
+    
+    # Diagramme in separatem Thread generieren
+    def run_chart_generation():
+        success = generate_charts()
+        
+        # Schließe Status-Dialog
+        root.after(0, status_dialog.destroy)
+        
+        if not success:
+            return
+        
+        # Starte Webserver
+        try:
+            from enrichment_stats_server import start_stats_server
+        except ImportError:
+            root.after(0, lambda: messagebox.showerror(
+                "Fehler",
+                "Webserver-Modul nicht gefunden.\nBitte prüfen Sie die Installation.",
+                parent=root
+            ))
+            return
+        
+        # Starte Webserver in separatem Thread
+        try:
+            port = 8080
+            server_thread = threading.Thread(
+                target=start_stats_server,
+                args=(stats_file, output_dir, port),
+                daemon=True
+            )
+            server_thread.start()
+            
+            # Öffne Browser nach kurzer Verzögerung
+            def open_browser():
+                import time
+                time.sleep(0.5)  # Warte bis Server bereit ist
+                webbrowser.open(f"http://localhost:{port}")
+            
+            browser_thread = threading.Thread(target=open_browser, daemon=True)
+            browser_thread.start()
+            
+            root.after(0, lambda: messagebox.showinfo(
+                "Webserver gestartet",
+                f"Die Anreicherungsstatistik wurde im Browser geöffnet.\n\n"
+                f"URL: http://localhost:{port}\n\n"
+                f"Der Webserver läuft im Hintergrund und wird beim Beenden der Anwendung automatisch geschlossen.",
+                parent=root
+            ))
+            
+        except Exception as e:
+            error_msg = f"Fehler beim Starten des Webservers:\n{e}"
+            root.after(0, lambda msg=error_msg: messagebox.showerror(
+                "Fehler",
+                msg,
+                parent=root
+            ))
+    
+    chart_thread = threading.Thread(target=run_chart_generation, daemon=True)
+    chart_thread.start()
+
+
 def run_script(
     root: tk.Tk,
     progress_label: ttk.Label,
@@ -246,6 +414,18 @@ def main() -> None:
         width=30,
         command=lambda: run_enrichment(root),
     ).pack(pady=5)
+    
+    # Button "Anreicherungsstatistik" nur anzeigen, wenn angereicherte Dateien existieren
+    enriched_xml = os.path.join(os.path.dirname(__file__), "voebvoll-20241027_enriched.xml")
+    enriched_stats = os.path.join(os.path.dirname(__file__), "voebvoll-20241027_enriched_stats.json")
+    
+    if os.path.exists(enriched_xml) and os.path.exists(enriched_stats):
+        ttk.Button(
+            frm,
+            text="Anreicherungsstatistik",
+            width=30,
+            command=lambda: show_enrichment_statistics(root),
+        ).pack(pady=5)
 
     ttk.Button(
         frm,
