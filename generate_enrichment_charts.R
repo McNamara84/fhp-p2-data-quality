@@ -61,8 +61,14 @@ title_data <- data.frame(
 # Balkendiagramm erstellen
 p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
   geom_bar(stat = "identity", width = 0.7) +
+  # Zahlen über den Balken - für kleine Werte prominenter anzeigen
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 4, fontface = "bold") +
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
   scale_fill_manual(values = c(
     "Gesamt" = "#667eea",
     "Mit ISBN" = "#764ba2", 
@@ -89,21 +95,95 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
   ) +
   scale_y_continuous(
     labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
-    expand = expansion(mult = c(0, 0.1))
+    expand = expansion(mult = c(0, 0.15))  # Mehr Platz oben für Labels
   )
 
-# Speichern als PNG (hohe Auflösung für wissenschaftliche Arbeit)
+# Speichern als PNG (hohe Auflösung + größere Höhe)
 output_file <- file.path(output_dir, "title_enrichment.png")
 ggsave(
   output_file,
   plot = p,
-  width = 10,
-  height = 6,
+  width = 12,   # Breiter
+  height = 10,  # Noch höher (war 8)
   dpi = 300,
   bg = "white"
 )
 
 cat("✓ Diagramm erstellt:", output_file, "\n")
+
+# ============================================================
+# Diagramm 2: Title - Abkürzungen und Korrekturen
+# ============================================================
+
+# Berechne Anzahl der Abkürzungen und Korrekturen
+abbreviations_before <- title_stats$abbreviation_replaced  # Abkürzungen die ersetzt wurden
+corrections <- title_stats$corrected  # Fehler die korrigiert wurden
+
+# Kombiniere beide für "vorher" und "nachher"
+abbreviations_and_errors_before <- abbreviations_before + corrections
+abbreviations_and_errors_fixed <- abbreviations_before + corrections  # Beide wurden behoben
+
+# Erstelle Data Frame
+title_corrections_data <- data.frame(
+  Kategorie = factor(
+    c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+  ),
+  Anzahl = c(total_records_val, records_with_isbn_val, abbreviations_and_errors_before, abbreviations_and_errors_fixed)
+)
+
+# Balkendiagramm erstellen
+p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  # Zahlen über den Balken
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Gesamt" = "#667eea",
+    "Mit ISBN" = "#764ba2", 
+    "Abgekürzt/Fehler vorher" = "#e67e22",
+    "Ausgeschrieben/korrigiert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Title",
+    subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+# Speichern als PNG
+output_file_2 <- file.path(output_dir, "title_corrections.png")
+ggsave(
+  output_file_2,
+  plot = p2,
+  width = 12,
+  height = 10,
+  dpi = 300,
+  bg = "white"
+)
+
+cat("✓ Diagramm erstellt:", output_file_2, "\n")
 
 # ============================================================
 # Weitere Diagramme können hier hinzugefügt werden
