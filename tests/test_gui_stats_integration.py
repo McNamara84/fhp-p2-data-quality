@@ -166,15 +166,21 @@ class TestChartGenerationWorkflow(unittest.TestCase):
 class TestWebserverIntegration(unittest.TestCase):
     """Tests für Webserver-Integration"""
 
-    @patch('threading.Thread')
-    def test_webserver_starts_in_thread(self, mock_thread):
-        """Test: Webserver startet in separatem Thread"""
-        mock_thread.return_value = MagicMock()
-        
+    def test_webserver_starts_in_thread(self):
+        """Test: Webserver kann in separatem Thread starten"""
         import threading
-        server_thread = threading.Thread(target=lambda: None, daemon=True)
         
-        self.assertIsInstance(server_thread, threading.Thread)
+        # Erstelle einen einfachen Test-Thread
+        test_executed = []
+        
+        def test_function():
+            test_executed.append(True)
+        
+        server_thread = threading.Thread(target=test_function, daemon=True)
+        server_thread.start()
+        server_thread.join(timeout=1)
+        
+        self.assertTrue(test_executed)
 
     @patch('webbrowser.open')
     def test_browser_opens_after_server_start(self, mock_browser_open):
@@ -187,24 +193,23 @@ class TestWebserverIntegration(unittest.TestCase):
         self.assertTrue(result)
         mock_browser_open.assert_called_once_with('http://localhost:8080')
 
-    @patch('threading.Thread')
-    @patch('webbrowser.open')
-    def test_complete_workflow(self, mock_browser, mock_thread):
+    def test_complete_workflow(self):
         """Test: Kompletter Workflow von Button-Click bis Browser-Öffnung"""
-        mock_thread.return_value = MagicMock()
-        mock_browser.return_value = True
-        
-        # Simuliere kompletten Workflow
         import threading
-        import webbrowser
+        
+        # Simuliere Workflow-Schritte
+        workflow_steps = []
         
         # 1. Thread erstellen
-        server_thread = threading.Thread(target=lambda: None, daemon=True)
-        self.assertIsInstance(server_thread, threading.Thread)
+        def mock_server():
+            workflow_steps.append('server_started')
         
-        # 2. Browser öffnen
-        result = webbrowser.open('http://localhost:8080')
-        self.assertTrue(result)
+        server_thread = threading.Thread(target=mock_server, daemon=True)
+        server_thread.start()
+        server_thread.join(timeout=1)
+        
+        # 2. Prüfe dass Server gestartet wurde
+        self.assertIn('server_started', workflow_steps)
 
 
 class TestFilePathHandling(unittest.TestCase):

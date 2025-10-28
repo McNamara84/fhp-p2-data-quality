@@ -288,7 +288,7 @@ class TestServerConfiguration(unittest.TestCase):
     def test_server_localhost_only(self):
         """Test: Server bindet nur an localhost"""
         # Dies wird durch Code-Inspektion getestet
-        with open(Path(__file__).resolve().parents[1] / "enrichment_stats_server.py") as f:
+        with open(Path(__file__).resolve().parents[1] / "enrichment_stats_server.py", encoding='utf-8') as f:
             content = f.read()
             # Server sollte an 'localhost' binden, nicht '0.0.0.0'
             self.assertIn("'localhost'", content)
