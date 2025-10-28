@@ -133,7 +133,34 @@ class TestRequestHandler(unittest.TestCase):
             daemon=True
         )
         self.server_thread.start()
-        time.sleep(0.5)  # Warte bis Server läuft
+        
+        # Warte bis Server bereit ist (mit Retry-Loop)
+        self._wait_for_server_ready(max_retries=20, retry_delay=0.1)
+    
+    def _wait_for_server_ready(self, max_retries=20, retry_delay=0.1):
+        """
+        Wartet bis Server bereit ist, Verbindungen zu akzeptieren.
+        
+        Args:
+            max_retries: Maximale Anzahl der Versuche
+            retry_delay: Wartezeit zwischen Versuchen in Sekunden
+        """
+        import socket
+        
+        for attempt in range(max_retries):
+            try:
+                # Versuche Verbindung zum Server
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)
+                    s.connect(('localhost', self.server_port))
+                    # Verbindung erfolgreich - Server ist bereit
+                    return
+            except (ConnectionRefusedError, OSError):
+                # Server noch nicht bereit, warte und versuche erneut
+                time.sleep(retry_delay)
+        
+        # Server nicht rechtzeitig bereit
+        raise TimeoutError(f"Server auf Port {self.server_port} wurde nach {max_retries * retry_delay}s nicht bereit")
 
     def tearDown(self):
         """Räume auf"""
