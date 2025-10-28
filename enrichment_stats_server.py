@@ -336,6 +336,36 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
                     <h2>Metadatenelement: Authors - Gesamtwirkung der Anreicherung</h2>
                     <img src="/charts/authors_total_impact.png" alt="Authors Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Publisher - Leere Felder befüllen</h2>
+                    <img src="/charts/publisher_enrichment.png" alt="Publisher Anreicherung - Leere Felder" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Publisher - Abkürzungen ausschreiben & Fehler korrigieren</h2>
+                    <img src="/charts/publisher_corrections.png" alt="Publisher Korrekturen" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Publisher - Gesamtwirkung der Anreicherung</h2>
+                    <img src="/charts/publisher_total_impact.png" alt="Publisher Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Year - Leere Felder befüllen</h2>
+                    <img src="/charts/year_enrichment.png" alt="Year Anreicherung - Leere Felder" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Year - Abkürzungen ausschreiben & Fehler korrigieren</h2>
+                    <img src="/charts/year_corrections.png" alt="Year Korrekturen" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
+                    <h2>Metadatenelement: Year - Gesamtwirkung der Anreicherung</h2>
+                    <img src="/charts/year_total_impact.png" alt="Year Gesamtwirkung" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
             `;
         }
     </script>

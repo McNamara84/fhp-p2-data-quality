@@ -422,7 +422,343 @@ ggsave(output_file_6, plot = p6, width = 12, height = 10, dpi = 300, bg = "white
 cat("✓ Diagramm erstellt:", output_file_6, "\n")
 
 # ============================================================
-# Weitere Diagramme können hier hinzugefügt werden
+# PUBLISHER STATISTICS
 # ============================================================
+
+publisher_stats <- stats_data$field_statistics$Publisher
+
+# ============================================================
+# Diagramm 7: Publisher - Leere Felder befüllen
+# ============================================================
+
+publisher_empty_before <- publisher_stats$empty_before
+publisher_filled_after <- publisher_stats$filled_after
+
+publisher_enrichment_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Leer vorher", "Befüllt"),
+    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+  ),
+  Anzahl = c(records_with_isbn_val, publisher_empty_before, publisher_filled_after)
+)
+
+p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Leer vorher" = "#e74c3c",
+    "Befüllt" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Publisher",
+    subtitle = "Befüllen leerer Felder",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_7 <- file.path(output_dir, "publisher_enrichment.png")
+ggsave(output_file_7, plot = p7, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_7, "\n")
+
+# ============================================================
+# Diagramm 8: Publisher - Abkürzungen und Korrekturen
+# ============================================================
+
+publisher_abbreviations <- publisher_stats$abbreviation_replaced
+publisher_corrections <- publisher_stats$corrected
+publisher_abbrev_and_errors <- publisher_abbreviations + publisher_corrections
+
+publisher_corrections_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+  ),
+  Anzahl = c(records_with_isbn_val, publisher_abbrev_and_errors, publisher_abbrev_and_errors)
+)
+
+p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Abgekürzt/Fehler vorher" = "#e67e22",
+    "Ausgeschrieben/korrigiert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Publisher",
+    subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_8 <- file.path(output_dir, "publisher_corrections.png")
+ggsave(output_file_8, plot = p8, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_8, "\n")
+
+# ============================================================
+# Diagramm 9: Publisher - Gesamtwirkung
+# ============================================================
+
+publisher_total_enriched <- publisher_filled_after + publisher_abbrev_and_errors
+
+publisher_total_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Angereichert"),
+    levels = c("Mit ISBN", "Angereichert")
+  ),
+  Anzahl = c(records_with_isbn_val, publisher_total_enriched)
+)
+
+p9 <- ggplot(publisher_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Angereichert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Publisher",
+    subtitle = "Gesamtwirkung der Anreicherung",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_9 <- file.path(output_dir, "publisher_total_impact.png")
+ggsave(output_file_9, plot = p9, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_9, "\n")
+
+# ============================================================
+# YEAR STATISTICS
+# ============================================================
+
+year_stats <- stats_data$field_statistics$Year
+
+# ============================================================
+# Diagramm 10: Year - Leere Felder befüllen
+# ============================================================
+
+year_empty_before <- year_stats$empty_before
+year_filled_after <- year_stats$filled_after
+
+year_enrichment_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Leer vorher", "Befüllt"),
+    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+  ),
+  Anzahl = c(records_with_isbn_val, year_empty_before, year_filled_after)
+)
+
+p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Leer vorher" = "#e74c3c",
+    "Befüllt" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Year",
+    subtitle = "Befüllen leerer Felder",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_10 <- file.path(output_dir, "year_enrichment.png")
+ggsave(output_file_10, plot = p10, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_10, "\n")
+
+# ============================================================
+# Diagramm 11: Year - Abkürzungen und Korrekturen
+# ============================================================
+
+year_abbreviations <- year_stats$abbreviation_replaced
+year_corrections <- year_stats$corrected
+year_abbrev_and_errors <- year_abbreviations + year_corrections
+
+year_corrections_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+  ),
+  Anzahl = c(records_with_isbn_val, year_abbrev_and_errors, year_abbrev_and_errors)
+)
+
+p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Abgekürzt/Fehler vorher" = "#e67e22",
+    "Ausgeschrieben/korrigiert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Year",
+    subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_11 <- file.path(output_dir, "year_corrections.png")
+ggsave(output_file_11, plot = p11, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_11, "\n")
+
+# ============================================================
+# Diagramm 12: Year - Gesamtwirkung
+# ============================================================
+
+year_total_enriched <- year_filled_after + year_abbrev_and_errors
+
+year_total_data <- data.frame(
+  Kategorie = factor(
+    c("Mit ISBN", "Angereichert"),
+    levels = c("Mit ISBN", "Angereichert")
+  ),
+  Anzahl = c(records_with_isbn_val, year_total_enriched)
+)
+
+p12 <- ggplot(year_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(values = c(
+    "Mit ISBN" = "#667eea",
+    "Angereichert" = "#27ae60"
+  )) +
+  labs(
+    title = "Metadatenelement: Year",
+    subtitle = "Gesamtwirkung der Anreicherung",
+    x = "",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_12 <- file.path(output_dir, "year_total_impact.png")
+ggsave(output_file_12, plot = p12, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_12, "\n")
 
 cat("\n✓ Alle Diagramme erfolgreich erstellt!\n")
