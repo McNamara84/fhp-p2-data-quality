@@ -119,8 +119,14 @@ class TestRequestHandler(unittest.TestCase):
         StatsRequestHandler.stats_file_path = self.stats_file
         StatsRequestHandler.charts_dir_path = self.charts_dir
         
+        # Finde freien Port
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            self.server_port = s.getsockname()[1]
+        
         # Starte Server in separatem Thread
-        self.server_port = 8083
         self.server_thread = threading.Thread(
             target=start_stats_server,
             args=(self.stats_file, self.charts_dir, self.server_port),
