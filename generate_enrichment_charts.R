@@ -425,7 +425,7 @@ cat("✓ Diagramm erstellt:", output_file_6, "\n")
 # PUBLISHER STATISTICS
 # ============================================================
 
-publisher_stats <- stats_data$field_statistics$Publisher
+publisher_stats <- field_stats$Publisher
 
 # ============================================================
 # Diagramm 7: Publisher - Leere Felder befüllen
@@ -595,7 +595,7 @@ cat("✓ Diagramm erstellt:", output_file_9, "\n")
 # YEAR STATISTICS
 # ============================================================
 
-year_stats <- stats_data$field_statistics$Year
+year_stats <- field_stats$Year
 
 # ============================================================
 # Diagramm 10: Year - Leere Felder befüllen
