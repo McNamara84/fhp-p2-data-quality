@@ -221,7 +221,7 @@ def main() -> None:
 
     buttons = [
         ("Nach Besitz splitten", "datensaetze_nach_besitz.py"),
-        ("Nach Quelle splitten", "datensaetze_nach_quelle.py"),
+        ("Nach Katalogisierungsquelle splitten", "datensaetze_nach_quelle.py"),
         ("Metadatenelemente auflisten", "show_elements.py"),
         ("Metadatenelemente (Menge) analysieren", "show_elements_quantity.py"),
         ("Primärschlüssel prüfen", "check_primary_key_unique.py"),
