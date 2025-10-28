@@ -43,19 +43,19 @@ total_records_in_xml <- 1264927  # Tatsächliche Anzahl <record> Tags
 # Daten für Title
 title_stats <- field_stats$Title
 
-# Berechne Werte für die 4 Balken
-total_records_val <- total_records_in_xml  # ALLE Datensätze in XML
-records_with_isbn_val <- records_with_isbn  # Datensätze mit ISBN (831.973)
+# Berechne Werte für die 3 Balken (ohne "Gesamt")
+# MIT ISBN ist nun die 100%-Basis
+records_with_isbn_val <- records_with_isbn  # Datensätze mit ISBN (neue Basis = 100%)
 empty_before <- title_stats$empty_before    # Leere Title-Felder vorher
 filled_after <- title_stats$filled_after    # Befüllte Title-Felder
 
 # Erstelle Data Frame
 title_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Leer vorher", "Befüllt"),
+    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, empty_before, filled_after)
+  Anzahl = c(records_with_isbn_val, empty_before, filled_after)
 )
 
 # Balkendiagramm erstellen
@@ -64,14 +64,13 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
   # Zahlen über den Balken - für kleine Werte prominenter anzeigen
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
-  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  # Prozentangaben für ALLE Balken (relativ zu "Mit ISBN")
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Leer vorher" = "#e74c3c",
     "Befüllt" = "#27ae60"
   )) +
@@ -123,13 +122,13 @@ corrections <- title_stats$corrected  # Fehler die korrigiert wurden
 abbreviations_and_errors_before <- abbreviations_before + corrections
 abbreviations_and_errors_fixed <- abbreviations_before + corrections  # Beide wurden behoben
 
-# Erstelle Data Frame
+# Erstelle Data Frame (ohne "Gesamt")
 title_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, abbreviations_and_errors_before, abbreviations_and_errors_fixed)
+  Anzahl = c(records_with_isbn_val, abbreviations_and_errors_before, abbreviations_and_errors_fixed)
 )
 
 # Balkendiagramm erstellen
@@ -138,14 +137,13 @@ p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
   # Zahlen über den Balken
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
-  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  # Prozentangaben für ALLE Balken (relativ zu "Mit ISBN")
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Abgekürzt/Fehler vorher" = "#e67e22",
     "Ausgeschrieben/korrigiert" = "#27ae60"
   )) +
@@ -192,13 +190,13 @@ cat("✓ Diagramm erstellt:", output_file_2, "\n")
 # Berechne Gesamtzahl angereicherter Datensätze
 total_enriched <- filled_after + abbreviations_and_errors_fixed  # 265 + 84.782
 
-# Erstelle Data Frame
+# Erstelle Data Frame (ohne "Gesamt")
 title_total_impact_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Angereichert"),
-    levels = c("Gesamt", "Mit ISBN", "Angereichert")
+    c("Mit ISBN", "Angereichert"),
+    levels = c("Mit ISBN", "Angereichert")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, total_enriched)
+  Anzahl = c(records_with_isbn_val, total_enriched)
 )
 
 # Balkendiagramm erstellen
@@ -207,14 +205,13 @@ p3 <- ggplot(title_total_impact_data, aes(x = Kategorie, y = Anzahl, fill = Kate
   # Zahlen über den Balken
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
-  # Prozentangaben für ALLE Balken (relativ zur Gesamtzahl)
+  # Prozentangaben für ALLE Balken (relativ zu "Mit ISBN")
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Angereichert" = "#27ae60"
   )) +
   labs(
@@ -269,10 +266,10 @@ authors_filled_after <- authors_stats$filled_after
 
 authors_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Gesamt", "Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Leer vorher", "Befüllt"),
+    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, authors_empty_before, authors_filled_after)
+  Anzahl = c(records_with_isbn_val, authors_empty_before, authors_filled_after)
 )
 
 p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -280,12 +277,11 @@ p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Leer vorher" = "#e74c3c",
     "Befüllt" = "#27ae60"
   )) +
@@ -326,10 +322,10 @@ authors_abbrev_and_errors <- authors_abbreviations + authors_corrections
 
 authors_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Gesamt", "Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
+    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, authors_abbrev_and_errors, authors_abbrev_and_errors)
+  Anzahl = c(records_with_isbn_val, authors_abbrev_and_errors, authors_abbrev_and_errors)
 )
 
 p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -337,12 +333,11 @@ p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kat
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Abgekürzt/Fehler vorher" = "#e67e22",
     "Ausgeschrieben/korrigiert" = "#27ae60"
   )) +
@@ -381,10 +376,10 @@ authors_total_enriched <- authors_filled_after + authors_abbrev_and_errors
 
 authors_total_data <- data.frame(
   Kategorie = factor(
-    c("Gesamt", "Mit ISBN", "Angereichert"),
-    levels = c("Gesamt", "Mit ISBN", "Angereichert")
+    c("Mit ISBN", "Angereichert"),
+    levels = c("Mit ISBN", "Angereichert")
   ),
-  Anzahl = c(total_records_val, records_with_isbn_val, authors_total_enriched)
+  Anzahl = c(records_with_isbn_val, authors_total_enriched)
 )
 
 p6 <- ggplot(authors_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -392,12 +387,11 @@ p6 <- ggplot(authors_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie
   geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
             vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / total_records_val * 100, 2), "%)")),
+    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
   scale_fill_manual(values = c(
-    "Gesamt" = "#667eea",
-    "Mit ISBN" = "#764ba2", 
+    "Mit ISBN" = "#667eea",
     "Angereichert" = "#27ae60"
   )) +
   labs(
