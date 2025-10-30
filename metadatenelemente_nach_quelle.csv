@@ -1,0 +1,43 @@
+﻿Element;Beschreibung;Anzahl Befüllung rda;Befüllung rda in %;Anzahl Befüllung rak;Befüllung rak in %;Anzahl Befüllung unknown;Befüllung unbekannt in %
+"<controlfield tag=""001"">";Kontrollnummer;266015;100.00%;897528;100.00%;101384;100.00%
+"<controlfield tag=""007"">";Physische Beschreibung / Medientyp;266015;100.00%;897528;100.00%;101384;100.00%
+"<controlfield tag=""008"">";Codierte Daten (Datum, Sprache, Land, etc.);266015;100.00%;897528;100.00%;101384;100.00%
+"<datafield tag=""020"" ind1="" "" ind2="" "">";ISBN;194002;72.93%;659445;73.47%;35944;35.45%
+"<datafield tag=""022"" ind1="" "" ind2="" "">";ISSN;17;0.01%;403;0.04%;3319;3.27%
+"<datafield tag=""040"" ind1="" "" ind2="" "">";Katalogisierungsquelle;266015;100.00%;897528;100.00%;0;0.00%
+"<datafield tag=""041"" ind1="" "" ind2="" "">";Sprachcode;98518;37.03%;2913;0.32%;2026;2.00%
+"<datafield tag=""049"" ind1="" "" ind2="" "">";Lokale Bestandsnummer;262101;98.53%;893938;99.60%;85066;83.90%
+"<datafield tag=""084"" ind1="" "" ind2="" "">";Andere Notation;247493;93.04%;478751;53.34%;62778;61.92%
+"<datafield tag=""100"" ind1=""0"" ind2="" "">";Personenname (Vorname);191077;71.83%;605985;67.52%;48230;47.57%
+"<datafield tag=""110"" ind1=""0"" ind2="" "">";Körperschaftsname;3095;1.16%;10992;1.22%;797;0.79%
+"<datafield tag=""240"" ind1=""0"" ind2="" "">";Einheitstitel;39404;14.81%;123996;13.82%;1813;1.79%
+"<datafield tag=""245"" ind1=""0"" ind2=""0"">";Haupttitel (ohne Zusatz);220475;82.88%;703597;78.39%;84487;83.33%
+"<datafield tag=""245"" ind1=""0"" ind2=""1"">";Haupttitel (mit Zusatz);3;0.00%;37;0.00%;0;0.00%
+"<datafield tag=""245"" ind1=""0"" ind2=""2"">";Haupttitel (mit Angabe Paralleltitel);237;0.09%;642;0.07%;85;0.08%
+"<datafield tag=""245"" ind1=""0"" ind2=""3"">";Haupttitel (ohne Verfasserangabe);163;0.06%;519;0.06%;38;0.04%
+"<datafield tag=""245"" ind1=""0"" ind2=""4"">";Haupttitel und Urheberangabe;44258;16.64%;188903;21.05%;16411;16.19%
+"<datafield tag=""245"" ind1=""0"" ind2=""5"">";Haupttitel (gemischte Verfasserangabe);806;0.30%;3474;0.39%;319;0.31%
+"<datafield tag=""245"" ind1=""0"" ind2=""6"">";Haupttitel (anonym);44;0.02%;187;0.02%;18;0.02%
+"<datafield tag=""245"" ind1=""0"" ind2=""7"">";Haupttitel (mehrere Werke);7;0.00%;33;0.00%;10;0.01%
+"<datafield tag=""245"" ind1=""0"" ind2=""8"">";Haupttitel (Sammelwerk);11;0.00%;40;0.00%;6;0.01%
+"<datafield tag=""245"" ind1=""0"" ind2=""9"">";Haupttitel (Sonderfälle);11;0.00%;96;0.01%;10;0.01%
+"<datafield tag=""246"" ind1=""1"" ind2=""1"">";Titelvarianten;724;0.27%;1679;0.19%;180;0.18%
+"<datafield tag=""246"" ind1=""1"" ind2=""3"">";Titelzusatz;2312;0.87%;7886;0.88%;237;0.23%
+"<datafield tag=""250"" ind1="" "" ind2="" "">";Ausgabebezeichnung;110549;41.56%;304531;33.93%;10654;10.51%
+"<datafield tag=""260"" ind1="" "" ind2="" "">";Verlags- und Erscheinungsangaben;264148;99.30%;894245;99.63%;87804;86.61%
+"<datafield tag=""300"" ind1="" "" ind2="" "">";Umfangsangabe;263490;99.05%;896040;99.83%;251;0.25%
+"<datafield tag=""336"" ind1="" "" ind2="" "">";Inhaltstyp;184166;69.23%;4002;0.45%;6555;6.47%
+"<datafield tag=""338"" ind1="" "" ind2="" "">";Datenträgertyp;183943;69.15%;65440;7.29%;19392;19.13%
+"<datafield tag=""490"" ind1=""0"" ind2=""#"">";Gesamttitel nicht verwiesen;102851;38.66%;330732;36.85%;19788;19.52%
+"<datafield tag=""500"" ind1="" "" ind2="" "">";Allgemeine Anmerkung;38403;14.44%;195809;21.82%;13375;13.19%
+"<datafield tag=""520"" ind1="" "" ind2="" "">";Zusammenfassung oder Abstract;125084;47.02%;196698;21.92%;9107;8.98%
+"<datafield tag=""520"" ind1=""1"" ind2="" "">";unformatierte Zusammenfassung (Rezensionen, Anmerkungen etc.);4589;1.73%;182193;20.30%;7443;7.34%
+"<datafield tag=""653"" ind1="" "" ind2="" "">";Freie Schlagwörter;133766;50.29%;383487;42.73%;30395;29.98%
+"<datafield tag=""653"" ind1="" "" ind2=""1"">";Personenname als Schlagwort;1748;0.66%;11766;1.31%;99;0.10%
+"<datafield tag=""653"" ind1="" "" ind2=""2"">";Körperschaftsname als Schlagwort;90;0.03%;1097;0.12%;12;0.01%
+"<datafield tag=""653"" ind1="" "" ind2=""4"">";Zeitschlagwort;2119;0.80%;14470;1.61%;189;0.19%
+"<datafield tag=""653"" ind1="" "" ind2=""5"">";Geografische Angabe als Schlagwort;4633;1.74%;36052;4.02%;445;0.44%
+"<datafield tag=""653"" ind1="" "" ind2=""6"">";Genre oder Formbegriff als Schlagwort;13170;4.95%;72286;8.05%;802;0.79%
+"<datafield tag=""700"" ind1=""0"" ind2="" "">";Weiterer Personennamen (Vorname);119218;44.82%;270026;30.09%;15173;14.97%
+"<datafield tag=""773"" ind1=""0"" ind2=""1"">";Angaben zur übergeordneten Einheit;23881;8.98%;48953;5.45%;8979;8.86%
+"<datafield tag=""969"" ind1=""#"" ind2=""#"">";Lokale administrative Daten (Systeminformationen);266015;100.00%;897528;100.00%;101384;100.00%
