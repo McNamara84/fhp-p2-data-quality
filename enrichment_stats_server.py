@@ -308,6 +308,15 @@ class StatsRequestHandler(BaseHTTPRequestHandler):
                 </div>
                 
                 <div class="section">
+                    <h2>📊 ISBN-Übersicht - Grundgesamtheit</h2>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Von <strong>1.264.927 Datensätzen</strong> haben <strong>831.973 (65,76%)</strong> eine ISBN 
+                        und können angereichert werden. <strong>432.954 Datensätze (34,24%)</strong> ohne ISBN können nicht angereichert werden.
+                    </p>
+                    <img src="/charts/isbn_overview.png" alt="ISBN-Übersicht" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+                
+                <div class="section">
                     <h2>Metadatenelement: Title - Leere Felder befüllen</h2>
                     <img src="/charts/title_enrichment.png" alt="Title Anreicherung - Leere Felder" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 </div>

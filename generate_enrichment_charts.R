@@ -37,6 +37,69 @@ field_stats <- stats$field_statistics
 total_records_in_xml <- 1264927  # Tatsächliche Anzahl <record> Tags
 
 # ============================================================
+# ÜBERSICHTS-DIAGRAMM: ISBN-Verteilung
+# Zeigt wie viele Datensätze eine ISBN haben vs. keine ISBN
+# ============================================================
+
+isbn_overview_data <- data.frame(
+  Kategorie = factor(
+    c("Datensätze gesamt", "Davon mit ISBN", "Davon ohne ISBN"),
+    levels = c("Datensätze gesamt", "Davon mit ISBN", "Davon ohne ISBN")
+  ),
+  Anzahl = c(
+    total_records_in_xml,
+    records_with_isbn,
+    total_records_in_xml - records_with_isbn
+  )
+)
+
+p_overview <- ggplot(isbn_overview_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+  geom_text(
+    aes(label = paste0("(", round(Anzahl / total_records_in_xml * 100, 2), "%)")),
+    vjust = 1.5, size = 4, color = "gray30"
+  ) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Datensätze gesamt" = "#95a5a6",
+      "Davon mit ISBN" = "#667eea",
+      "Davon ohne ISBN" = "#e74c3c"
+    )
+  ) +
+  labs(
+    title = "Übersicht: ISBN-Verfügbarkeit im Gesamtdatenbestand",
+    subtitle = "Verteilung der Datensätze mit und ohne ISBN",
+    x = "Datensatz-Kategorie",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_overview <- file.path(output_dir, "isbn_overview.png")
+ggsave(output_file_overview, plot = p_overview, width = 12, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_overview, "\n")
+
+# ============================================================
 # Diagramm 1: Title - Balkendiagramm
 # ============================================================
 
@@ -69,15 +132,18 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Leer vorher" = "#e74c3c",
-    "Befüllt" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Leer vorher" = "#e74c3c",
+      "Befüllt" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Title",
     subtitle = "Anreicherung leerer Felder",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -86,8 +152,11 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -125,8 +194,8 @@ abbreviations_and_errors_fixed <- abbreviations_before + corrections  # Beide wu
 # Erstelle Data Frame (ohne "Gesamt")
 title_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
+    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
   ),
   Anzahl = c(records_with_isbn_val, abbreviations_and_errors_before, abbreviations_and_errors_fixed)
 )
@@ -142,15 +211,18 @@ p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Abgekürzt/Fehler vorher" = "#e67e22",
-    "Ausgeschrieben/korrigiert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Fehlerhafte Ansetzung" = "#e67e22",
+      "Ansetzung korrigiert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Title",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -159,8 +231,11 @@ p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -210,14 +285,17 @@ p3 <- ggplot(title_total_impact_data, aes(x = Kategorie, y = Anzahl, fill = Kate
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Angereichert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Angereichert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Title",
     subtitle = "Gesamtwirkung der Anreicherung",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -226,8 +304,11 @@ p3 <- ggplot(title_total_impact_data, aes(x = Kategorie, y = Anzahl, fill = Kate
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -280,15 +361,18 @@ p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Leer vorher" = "#e74c3c",
-    "Befüllt" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Leer vorher" = "#e74c3c",
+      "Befüllt" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Authors",
     subtitle = "Anreicherung leerer Felder",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -297,8 +381,11 @@ p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -322,8 +409,8 @@ authors_abbrev_and_errors <- authors_abbreviations + authors_corrections
 
 authors_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
+    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
   ),
   Anzahl = c(records_with_isbn_val, authors_abbrev_and_errors, authors_abbrev_and_errors)
 )
@@ -336,15 +423,18 @@ p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kat
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Abgekürzt/Fehler vorher" = "#e67e22",
-    "Ausgeschrieben/korrigiert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Fehlerhafte Ansetzung" = "#e67e22",
+      "Ansetzung korrigiert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Authors",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -353,8 +443,11 @@ p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kat
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -390,14 +483,17 @@ p6 <- ggplot(authors_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Angereichert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Angereichert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Authors",
     subtitle = "Gesamtwirkung der Anreicherung",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -406,8 +502,11 @@ p6 <- ggplot(authors_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -450,15 +549,18 @@ p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Ka
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Leer vorher" = "#e74c3c",
-    "Befüllt" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Leer vorher" = "#e74c3c",
+      "Befüllt" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Publisher",
     subtitle = "Befüllen leerer Felder",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -467,8 +569,11 @@ p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Ka
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -492,8 +597,8 @@ publisher_abbrev_and_errors <- publisher_abbreviations + publisher_corrections
 
 publisher_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
+    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
   ),
   Anzahl = c(records_with_isbn_val, publisher_abbrev_and_errors, publisher_abbrev_and_errors)
 )
@@ -506,15 +611,18 @@ p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = K
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Abgekürzt/Fehler vorher" = "#e67e22",
-    "Ausgeschrieben/korrigiert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Fehlerhafte Ansetzung" = "#e67e22",
+      "Ansetzung korrigiert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Publisher",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -523,8 +631,11 @@ p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = K
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -560,14 +671,17 @@ p9 <- ggplot(publisher_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategor
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Angereichert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Angereichert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Publisher",
     subtitle = "Gesamtwirkung der Anreicherung",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -576,8 +690,11 @@ p9 <- ggplot(publisher_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategor
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -620,15 +737,18 @@ p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Katego
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Leer vorher" = "#e74c3c",
-    "Befüllt" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Leer vorher" = "#e74c3c",
+      "Befüllt" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Year",
     subtitle = "Befüllen leerer Felder",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -637,8 +757,11 @@ p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Katego
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -662,8 +785,8 @@ year_abbrev_and_errors <- year_abbreviations + year_corrections
 
 year_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert"),
-    levels = c("Mit ISBN", "Abgekürzt/Fehler vorher", "Ausgeschrieben/korrigiert")
+    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
+    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
   ),
   Anzahl = c(records_with_isbn_val, year_abbrev_and_errors, year_abbrev_and_errors)
 )
@@ -676,15 +799,18 @@ p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Abgekürzt/Fehler vorher" = "#e67e22",
-    "Ausgeschrieben/korrigiert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Fehlerhafte Ansetzung" = "#e67e22",
+      "Ansetzung korrigiert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Year",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -693,8 +819,11 @@ p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
@@ -730,14 +859,17 @@ p12 <- ggplot(year_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie))
     aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     vjust = 1.5, size = 4, color = "gray30"
   ) +
-  scale_fill_manual(values = c(
-    "Mit ISBN" = "#667eea",
-    "Angereichert" = "#27ae60"
-  )) +
+  scale_fill_manual(
+    name = "Kategorie",
+    values = c(
+      "Mit ISBN" = "#667eea",
+      "Angereichert" = "#27ae60"
+    )
+  ) +
   labs(
     title = "Metadatenelement: Year",
     subtitle = "Gesamtwirkung der Anreicherung",
-    x = "",
+    x = "Anreicherungs-Kategorie",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
@@ -746,8 +878,11 @@ p12 <- ggplot(year_total_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie))
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
     axis.text.x = element_text(size = 12, face = "bold"),
     axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
-    legend.position = "none",
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.margin = margin(20, 20, 20, 20)
