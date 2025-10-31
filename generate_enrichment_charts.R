@@ -106,19 +106,18 @@ cat("✓ Diagramm erstellt:", output_file_overview, "\n")
 # Daten für Title
 title_stats <- field_stats$Title
 
-# Berechne Werte für die 3 Balken (ohne "Gesamt")
+# Berechne Werte für die 2 Balken (reduziert von 3)
 # MIT ISBN ist nun die 100%-Basis
 records_with_isbn_val <- records_with_isbn  # Datensätze mit ISBN (neue Basis = 100%)
-empty_before <- title_stats$empty_before    # Leere Title-Felder vorher
 filled_after <- title_stats$filled_after    # Befüllte Title-Felder
 
-# Erstelle Data Frame
+# Erstelle Data Frame (nur 2 Balken: Mit ISBN + Befüllt)
 title_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Befüllt"),
+    levels = c("Mit ISBN", "Befüllt")
   ),
-  Anzahl = c(records_with_isbn_val, empty_before, filled_after)
+  Anzahl = c(records_with_isbn_val, filled_after)
 )
 
 # Balkendiagramm erstellen
@@ -136,7 +135,6 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Leer vorher" = "#e74c3c",
       "Befüllt" = "#27ae60"
     )
   ) +
@@ -187,17 +185,16 @@ cat("✓ Diagramm erstellt:", output_file, "\n")
 abbreviations_before <- title_stats$abbreviation_replaced  # Abkürzungen die ersetzt wurden
 corrections <- title_stats$corrected  # Fehler die korrigiert wurden
 
-# Kombiniere beide für "vorher" und "nachher"
-abbreviations_and_errors_before <- abbreviations_before + corrections
+# Kombiniere beide für korrigierte Datensätze
 abbreviations_and_errors_fixed <- abbreviations_before + corrections  # Beide wurden behoben
 
-# Erstelle Data Frame (ohne "Gesamt")
+# Erstelle Data Frame (nur 2 Balken: Mit ISBN + Ansetzung angeglichen)
 title_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
-    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
+    c("Mit ISBN", "Ansetzung angeglichen"),
+    levels = c("Mit ISBN", "Ansetzung angeglichen")
   ),
-  Anzahl = c(records_with_isbn_val, abbreviations_and_errors_before, abbreviations_and_errors_fixed)
+  Anzahl = c(records_with_isbn_val, abbreviations_and_errors_fixed)
 )
 
 # Balkendiagramm erstellen
@@ -215,8 +212,7 @@ p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Fehlerhafte Ansetzung" = "#e67e22",
-      "Ansetzung korrigiert" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60"
     )
   ) +
   labs(
@@ -347,10 +343,10 @@ authors_filled_after <- authors_stats$filled_after
 
 authors_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Befüllt"),
+    levels = c("Mit ISBN", "Befüllt")
   ),
-  Anzahl = c(records_with_isbn_val, authors_empty_before, authors_filled_after)
+  Anzahl = c(records_with_isbn_val, authors_filled_after)
 )
 
 p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -365,7 +361,6 @@ p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Leer vorher" = "#e74c3c",
       "Befüllt" = "#27ae60"
     )
   ) +
@@ -409,10 +404,10 @@ authors_abbrev_and_errors <- authors_abbreviations + authors_corrections
 
 authors_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
-    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
+    c("Mit ISBN", "Ansetzung angeglichen"),
+    levels = c("Mit ISBN", "Ansetzung angeglichen")
   ),
-  Anzahl = c(records_with_isbn_val, authors_abbrev_and_errors, authors_abbrev_and_errors)
+  Anzahl = c(records_with_isbn_val, authors_abbrev_and_errors)
 )
 
 p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -427,8 +422,7 @@ p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kat
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Fehlerhafte Ansetzung" = "#e67e22",
-      "Ansetzung korrigiert" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60"
     )
   ) +
   labs(
@@ -535,10 +529,10 @@ publisher_filled_after <- publisher_stats$filled_after
 
 publisher_enrichment_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Befüllt"),
+    levels = c("Mit ISBN", "Befüllt")
   ),
-  Anzahl = c(records_with_isbn_val, publisher_empty_before, publisher_filled_after)
+  Anzahl = c(records_with_isbn_val, publisher_filled_after)
 )
 
 p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -553,7 +547,6 @@ p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Ka
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Leer vorher" = "#e74c3c",
       "Befüllt" = "#27ae60"
     )
   ) +
@@ -597,10 +590,10 @@ publisher_abbrev_and_errors <- publisher_abbreviations + publisher_corrections
 
 publisher_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
-    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
+    c("Mit ISBN", "Ansetzung angeglichen"),
+    levels = c("Mit ISBN", "Ansetzung angeglichen")
   ),
-  Anzahl = c(records_with_isbn_val, publisher_abbrev_and_errors, publisher_abbrev_and_errors)
+  Anzahl = c(records_with_isbn_val, publisher_abbrev_and_errors)
 )
 
 p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -615,8 +608,7 @@ p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = K
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Fehlerhafte Ansetzung" = "#e67e22",
-      "Ansetzung korrigiert" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60"
     )
   ) +
   labs(
@@ -723,10 +715,10 @@ year_filled_after <- year_stats$filled_after
 
 year_enrichment_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Leer vorher", "Befüllt"),
-    levels = c("Mit ISBN", "Leer vorher", "Befüllt")
+    c("Mit ISBN", "Befüllt"),
+    levels = c("Mit ISBN", "Befüllt")
   ),
-  Anzahl = c(records_with_isbn_val, year_empty_before, year_filled_after)
+  Anzahl = c(records_with_isbn_val, year_filled_after)
 )
 
 p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -741,7 +733,6 @@ p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Katego
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Leer vorher" = "#e74c3c",
       "Befüllt" = "#27ae60"
     )
   ) +
@@ -785,10 +776,10 @@ year_abbrev_and_errors <- year_abbreviations + year_corrections
 
 year_corrections_data <- data.frame(
   Kategorie = factor(
-    c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert"),
-    levels = c("Mit ISBN", "Fehlerhafte Ansetzung", "Ansetzung korrigiert")
+    c("Mit ISBN", "Ansetzung angeglichen"),
+    levels = c("Mit ISBN", "Ansetzung angeglichen")
   ),
-  Anzahl = c(records_with_isbn_val, year_abbrev_and_errors, year_abbrev_and_errors)
+  Anzahl = c(records_with_isbn_val, year_abbrev_and_errors)
 )
 
 p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
@@ -803,8 +794,7 @@ p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kateg
     name = "Kategorie",
     values = c(
       "Mit ISBN" = "#667eea",
-      "Fehlerhafte Ansetzung" = "#e67e22",
-      "Ansetzung korrigiert" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60"
     )
   ) +
   labs(
