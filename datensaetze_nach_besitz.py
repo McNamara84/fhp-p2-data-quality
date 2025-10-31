@@ -21,13 +21,19 @@ def split_by_besitz(input_file: str = 'voebvoll-20241027.xml', output_dir: str =
         return vals or ['unknown']
 
     split_records(input_file, output_dir, extractor)
+
+    # Sortiere die Ergebnisse nach der Anzahl der 049-Tags, absteigend
+    sorted_counts = sorted(book_counts.items(), key=lambda x: x[1], reverse=True)
     #write book-statistics in csv-File
     with open(csv_file, mode='w', newline='', encoding='utf-8-sig') as file:
         writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['Besitzende Bibliothek', 'Anzahl Datensätze'])
 
-        for category, count in book_counts.items():
+        for category, count in sorted_counts:
             writer.writerow([category, count])
+
+
+
 
 if __name__ == '__main__':
     split_by_besitz()
