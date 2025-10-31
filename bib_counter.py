@@ -21,7 +21,9 @@ def count_049_tags(input_file: str = 'voebvoll-20241027.xml', csv_file: str = 'b
             # Elemente bereinigen, um Speicher freizugeben
             elem.clear()
             root.clear()
-
+    # Sortiere die Ergebnisse nach der Anzahl der 049-Tags, absteigend
+    occurrences_049.sort(key=lambda x: x[1], reverse=True)
+    
     # Schreibe Ergebnisse in CSV-Datei
     with open(csv_file, mode='w', newline='', encoding='utf-8-sig') as file:
         writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_MINIMAL)
