@@ -106,51 +106,59 @@ cat("✓ Diagramm erstellt:", output_file_overview, "\n")
 # Daten für Title
 title_stats <- field_stats$Title
 
-# Berechne Werte für die 2 Balken (reduziert von 3)
-# MIT ISBN ist nun die 100%-Basis
-records_with_isbn_val <- records_with_isbn  # Datensätze mit ISBN (neue Basis = 100%)
+# Berechne Werte für gestapeltes Balkendiagramm
+records_with_isbn_val <- records_with_isbn  # Datensätze mit ISBN (Basis)
 filled_after <- title_stats$filled_after    # Befüllte Title-Felder
+unchanged <- records_with_isbn_val - filled_after  # Unveränderte Datensätze
 
-# Erstelle Data Frame (nur 2 Balken: Mit ISBN + Befüllt)
+# Erstelle Data Frame für gestapelten Balken
 title_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Befüllt"),
-    levels = c("Mit ISBN", "Befüllt")
-  ),
-  Anzahl = c(records_with_isbn_val, filled_after)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
+  Anzahl = c(unchanged, filled_after)
 )
 
-# Balkendiagramm erstellen
-p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  # Zahlen über den Balken - für kleine Werte prominenter anzeigen
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
-  # Prozentangaben für ALLE Balken (relativ zu "Mit ISBN")
+# Gestapeltes Balkendiagramm erstellen
+p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  # Zahlen in den Segmenten
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(title_data, Status == "Befüllt"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(title_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  # Gesamtzahl über dem Balken
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Befüllt" = "#27ae60"
+      "Befüllt" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Title",
     subtitle = "Anreicherung leerer Felder",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -161,16 +169,16 @@ p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
   ) +
   scale_y_continuous(
     labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
-    expand = expansion(mult = c(0, 0.15))  # Mehr Platz oben für Labels
+    expand = expansion(mult = c(0, 0.15))
   )
 
-# Speichern als PNG (hohe Auflösung + größere Höhe)
+# Speichern als PNG
 output_file <- file.path(output_dir, "title_enrichment.png")
 ggsave(
   output_file,
   plot = p,
-  width = 12,   # Breiter
-  height = 10,  # Noch höher (war 8)
+  width = 12,
+  height = 10,
   dpi = 300,
   bg = "white"
 )
@@ -187,47 +195,56 @@ corrections <- title_stats$corrected  # Fehler die korrigiert wurden
 
 # Kombiniere beide für korrigierte Datensätze
 abbreviations_and_errors_fixed <- abbreviations_before + corrections  # Beide wurden behoben
+unchanged <- records_with_isbn_val - abbreviations_and_errors_fixed  # Unveränderte Datensätze
 
-# Erstelle Data Frame (nur 2 Balken: Mit ISBN + Ansetzung angeglichen)
+# Erstelle Data Frame für gestapelten Balken
 title_corrections_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Ansetzung angeglichen"),
-    levels = c("Mit ISBN", "Ansetzung angeglichen")
-  ),
-  Anzahl = c(records_with_isbn_val, abbreviations_and_errors_fixed)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
+  Anzahl = c(unchanged, abbreviations_and_errors_fixed)
 )
 
-# Balkendiagramm erstellen
-p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  # Zahlen über den Balken
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
-  # Prozentangaben für ALLE Balken (relativ zu "Mit ISBN")
+# Gestapeltes Balkendiagramm erstellen
+p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  # Zahlen in den Segmenten
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(title_corrections_data, Status == "Ansetzung angeglichen"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(title_corrections_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  # Gesamtzahl über dem Balken
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Ansetzung angeglichen" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Title",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -340,43 +357,52 @@ authors_stats <- field_stats$Authors
 
 authors_empty_before <- authors_stats$empty_before
 authors_filled_after <- authors_stats$filled_after
+unchanged <- records_with_isbn_val - authors_filled_after
 
 authors_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Befüllt"),
-    levels = c("Mit ISBN", "Befüllt")
-  ),
-  Anzahl = c(records_with_isbn_val, authors_filled_after)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
+  Anzahl = c(unchanged, authors_filled_after)
 )
 
-p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(authors_data, Status == "Befüllt"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(authors_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Befüllt" = "#27ae60"
+      "Befüllt" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Authors",
     subtitle = "Anreicherung leerer Felder",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -401,43 +427,52 @@ cat("✓ Diagramm erstellt:", output_file_4, "\n")
 authors_abbreviations <- authors_stats$abbreviation_replaced
 authors_corrections <- authors_stats$corrected
 authors_abbrev_and_errors <- authors_abbreviations + authors_corrections
+unchanged <- records_with_isbn_val - authors_abbrev_and_errors
 
 authors_corrections_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Ansetzung angeglichen"),
-    levels = c("Mit ISBN", "Ansetzung angeglichen")
-  ),
-  Anzahl = c(records_with_isbn_val, authors_abbrev_and_errors)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
+  Anzahl = c(unchanged, authors_abbrev_and_errors)
 )
 
-p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(authors_corrections_data, Status == "Ansetzung angeglichen"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(authors_corrections_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Ansetzung angeglichen" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Authors",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -526,43 +561,52 @@ publisher_stats <- field_stats$Publisher
 
 publisher_empty_before <- publisher_stats$empty_before
 publisher_filled_after <- publisher_stats$filled_after
+unchanged <- records_with_isbn_val - publisher_filled_after
 
 publisher_enrichment_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Befüllt"),
-    levels = c("Mit ISBN", "Befüllt")
-  ),
-  Anzahl = c(records_with_isbn_val, publisher_filled_after)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
+  Anzahl = c(unchanged, publisher_filled_after)
 )
 
-p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(publisher_enrichment_data, Status == "Befüllt"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(publisher_enrichment_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Befüllt" = "#27ae60"
+      "Befüllt" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Publisher",
     subtitle = "Befüllen leerer Felder",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -589,41 +633,49 @@ publisher_corrections <- publisher_stats$corrected
 publisher_abbrev_and_errors <- publisher_abbreviations + publisher_corrections
 
 publisher_corrections_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Ansetzung angeglichen"),
-    levels = c("Mit ISBN", "Ansetzung angeglichen")
-  ),
-  Anzahl = c(records_with_isbn_val, publisher_abbrev_and_errors)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
+  Anzahl = c(records_with_isbn_val - publisher_abbrev_and_errors, publisher_abbrev_and_errors)
 )
 
-p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(publisher_corrections_data, Status == "Ansetzung angeglichen"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(publisher_corrections_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Ansetzung angeglichen" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Publisher",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -712,43 +764,52 @@ year_stats <- field_stats$Year
 
 year_empty_before <- year_stats$empty_before
 year_filled_after <- year_stats$filled_after
+unchanged <- records_with_isbn_val - year_filled_after
 
 year_enrichment_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Befüllt"),
-    levels = c("Mit ISBN", "Befüllt")
-  ),
-  Anzahl = c(records_with_isbn_val, year_filled_after)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
+  Anzahl = c(unchanged, year_filled_after)
 )
 
-p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(year_enrichment_data, Status == "Befüllt"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(year_enrichment_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Befüllt" = "#27ae60"
+      "Befüllt" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Year",
     subtitle = "Befüllen leerer Felder",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
@@ -775,41 +836,49 @@ year_corrections <- year_stats$corrected
 year_abbrev_and_errors <- year_abbreviations + year_corrections
 
 year_corrections_data <- data.frame(
-  Kategorie = factor(
-    c("Mit ISBN", "Ansetzung angeglichen"),
-    levels = c("Mit ISBN", "Ansetzung angeglichen")
-  ),
-  Anzahl = c(records_with_isbn_val, year_abbrev_and_errors)
+  Kategorie = "Datensätze mit ISBN",
+  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
+  Anzahl = c(records_with_isbn_val - year_abbrev_and_errors, year_abbrev_and_errors)
 )
 
-p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Kategorie)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = format(Anzahl, big.mark = ".", decimal.mark = ",")), 
-            vjust = -0.5, size = 5, fontface = "bold", color = "black") +
+p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.5) +
   geom_text(
-    aes(label = paste0("(", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    vjust = 1.5, size = 4, color = "gray30"
+    data = subset(year_corrections_data, Status == "Ansetzung angeglichen"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 5, fontface = "bold", color = "white"
   ) +
+  geom_text(
+    data = subset(year_corrections_data, Status == "Unverändert"),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 4, color = "gray30"
+  ) +
+  annotate("text", x = 1, y = records_with_isbn_val, 
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 5, fontface = "bold", color = "black") +
   scale_fill_manual(
-    name = "Kategorie",
+    name = "Status",
     values = c(
-      "Mit ISBN" = "#667eea",
-      "Ansetzung angeglichen" = "#27ae60"
+      "Ansetzung angeglichen" = "#27ae60",
+      "Unverändert" = "#95a5a6"
     )
   ) +
   labs(
     title = "Metadatenelement: Year",
     subtitle = "Ausschreiben von Abkürzungen und Fehlerkorrekturen",
-    x = "Anreicherungs-Kategorie",
+    x = "",
     y = "Anzahl Datensätze"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
-    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 13, face = "bold"),
     axis.text.y = element_text(size = 11),
-    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
     axis.title.y = element_text(size = 13, face = "bold"),
     legend.position = "right",
     legend.title = element_text(size = 12, face = "bold"),
