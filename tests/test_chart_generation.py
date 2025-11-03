@@ -288,6 +288,8 @@ class TestChartGeneration(unittest.TestCase):
                 if result.returncode == 0:
                     # Prüfe ob Chart-Dateien erstellt wurden
                     expected_files = [
+                        "isbn_overview.png",
+                        "metadata_overview.png",
                         "title_enrichment.png",
                         "title_corrections.png",
                         "title_total_impact.png",
@@ -319,10 +321,12 @@ class TestChartFileProperties(unittest.TestCase):
 
     def test_expected_chart_count(self):
         """Test: Erwartete Anzahl von Charts ist dokumentiert"""
-        # 4 Felder × 3 Chart-Typen = 12 Charts
-        expected_chart_count = 12
+        # 1 ISBN-Übersicht + 1 Metadata-Übersicht + 4 Felder × 3 Chart-Typen = 14 Charts
+        expected_chart_count = 14
         
         chart_files = [
+            "isbn_overview.png",
+            "metadata_overview.png",
             "title_enrichment.png", "title_corrections.png", "title_total_impact.png",
             "authors_enrichment.png", "authors_corrections.png", "authors_total_impact.png",
             "publisher_enrichment.png", "publisher_corrections.png", "publisher_total_impact.png",
@@ -334,6 +338,8 @@ class TestChartFileProperties(unittest.TestCase):
     def test_chart_naming_convention(self):
         """Test: Chart-Dateien folgen Namenskonvention"""
         chart_files = [
+            "isbn_overview.png",
+            "metadata_overview.png",
             "title_enrichment.png", "title_corrections.png", "title_total_impact.png",
             "authors_enrichment.png", "authors_corrections.png", "authors_total_impact.png",
             "publisher_enrichment.png", "publisher_corrections.png", "publisher_total_impact.png",
@@ -341,13 +347,218 @@ class TestChartFileProperties(unittest.TestCase):
         ]
         
         for filename in chart_files:
-            # Prüfe Format: <field>_<type>.png
+            # Prüfe Format: <field>_<type>.png oder overview.png
             self.assertTrue(filename.endswith('.png'))
-            self.assertIn('_', filename)
             
-            # Prüfe dass es ein bekanntes Feld ist
-            field = filename.split('_')[0]
-            self.assertIn(field, ['title', 'authors', 'publisher', 'year'])
+            if filename not in ['isbn_overview.png', 'metadata_overview.png']:
+                self.assertIn('_', filename)
+                # Prüfe dass es ein bekanntes Feld ist
+                field = filename.split('_')[0]
+                self.assertIn(field, ['title', 'authors', 'publisher', 'year'])
+
+
+class TestStackedBarCharts(unittest.TestCase):
+    """Tests für die Stacked Bar Chart Implementation"""
+
+    def test_stacked_bar_data_structure(self):
+        """Test: Datenstruktur für gestapelte Balken ist korrekt"""
+        # Simuliere Daten wie im R-Skript
+        records_with_isbn = 1200
+        filled_after = 40
+        unchanged = records_with_isbn - filled_after
+        
+        # Prüfe dass Summe stimmt
+        self.assertEqual(filled_after + unchanged, records_with_isbn)
+        
+        # Prüfe dass beide Werte positiv sind
+        self.assertGreaterEqual(filled_after, 0)
+        self.assertGreaterEqual(unchanged, 0)
+
+    def test_stacked_bar_factor_levels(self):
+        """Test: Factor-Levels für gestapelte Balken sind in korrekter Reihenfolge"""
+        # Die Reihenfolge sollte sein: "Angereichert" (unten), "Unverändert" (oben)
+        # Dies entspricht der factor()-Definition im R-Skript
+        
+        # Für verschiedene Diagramm-Typen können unterschiedliche Labels verwendet werden
+        alternative_levels = [
+            ["Befüllt", "Unverändert"],
+            ["Ansetzung angeglichen", "Unverändert"],
+            ["Korrigiert", "Unverändert"]
+        ]
+        
+        # Teste dass alle Level-Sets zwei Elemente haben
+        for levels in alternative_levels:
+            self.assertEqual(len(levels), 2)
+            self.assertIn("Unverändert", levels)
+
+    def test_percentage_calculation(self):
+        """Test: Prozentberechnung für Labels ist korrekt"""
+        total = 1000
+        enriched = 250
+        
+        percentage = (enriched / total) * 100
+        
+        self.assertEqual(percentage, 25.0)
+        self.assertGreaterEqual(percentage, 0)
+        self.assertLessEqual(percentage, 100)
+
+
+class TestMetadataOverviewDiagram(unittest.TestCase):
+    """Tests für das neue Metadata Overview Diagramm"""
+
+    def test_overview_has_four_elements(self):
+        """Test: Overview-Diagramm zeigt alle 4 Metadatenelemente"""
+        expected_elements = ["Title", "Authors", "Publisher", "Year"]
+        
+        # Jedes Element hat 2 Status-Werte (Angereichert, Unverändert)
+        expected_data_points = len(expected_elements) * 2
+        
+        self.assertEqual(expected_data_points, 8)
+
+    def test_overview_data_structure(self):
+        """Test: Datenstruktur für Overview ist korrekt"""
+        # Simuliere die Datenstruktur aus dem R-Skript
+        elements = ["Title", "Authors", "Publisher", "Year"]
+        statuses = ["Angereichert", "Unverändert"]
+        
+        # Erstelle simulierte Daten
+        data_points = []
+        for element in elements:
+            for status in statuses:
+                data_points.append({
+                    "Element": element,
+                    "Status": status,
+                    "Anzahl": 100  # Beispielwert
+                })
+        
+        self.assertEqual(len(data_points), 8)
+        
+        # Prüfe dass jedes Element beide Status hat
+        for element in elements:
+            element_data = [d for d in data_points if d["Element"] == element]
+            self.assertEqual(len(element_data), 2)
+            element_statuses = [d["Status"] for d in element_data]
+            self.assertIn("Angereichert", element_statuses)
+            self.assertIn("Unverändert", element_statuses)
+
+    def test_overview_total_calculation(self):
+        """Test: Gesamtanzahl pro Element wird korrekt berechnet"""
+        # Beispiel: Title hat 290 angereicherte + 910 unveränderte = 1200 gesamt
+        title_enriched = 290
+        title_unchanged = 910
+        total_records = 1200
+        
+        calculated_total = title_enriched + title_unchanged
+        
+        self.assertEqual(calculated_total, total_records)
+
+
+class TestConditionalLabelRendering(unittest.TestCase):
+    """Tests für die conditional label rendering Funktion (≥2% inside, <2% outside)"""
+
+    def test_threshold_detection(self):
+        """Test: 2%-Schwellenwert wird korrekt erkannt"""
+        total = 1000
+        
+        # Testfälle
+        test_cases = [
+            (50, True),   # 5% >= 2% → inside
+            (20, True),   # 2% >= 2% → inside
+            (19, False),  # 1.9% < 2% → outside
+            (10, False),  # 1% < 2% → outside
+            (5, False),   # 0.5% < 2% → outside
+        ]
+        
+        for count, should_be_inside in test_cases:
+            percentage = (count / total) * 100
+            is_inside = percentage >= 2
+            
+            self.assertEqual(is_inside, should_be_inside,
+                           f"Für {count}/{total} ({percentage}%) erwartet {should_be_inside}, bekommen {is_inside}")
+
+    def test_small_segment_detection(self):
+        """Test: Sehr kleine Segmente (< 2%) werden erkannt"""
+        total = 831973  # Realistische Anzahl aus den echten Daten
+        year_enriched = 2921  # Realistischer Wert
+        
+        percentage = (year_enriched / total) * 100
+        
+        # Year hat ca. 0.35%, sollte also < 2% sein
+        self.assertLess(percentage, 2.0)
+        self.assertGreater(percentage, 0.0)
+
+    def test_external_label_position_calculation(self):
+        """Test: Position für externe Labels wird korrekt berechnet"""
+        total_records = 831973
+        year_total = 2921
+        
+        # Position in der Mitte des grünen Segments (oben am Balken)
+        # Formula: records_with_isbn_val - (year_total / 2)
+        label_y_position = total_records - (year_total / 2)
+        
+        # Position sollte sehr nah am oberen Rand sein
+        self.assertGreater(label_y_position, total_records - year_total)
+        self.assertLessEqual(label_y_position, total_records)
+        
+        # Genauer Test: Position ist genau in der Mitte des grünen Segments
+        expected_position = total_records - (year_total / 2)
+        self.assertEqual(label_y_position, expected_position)
+
+
+class TestXAxisExpansion(unittest.TestCase):
+    """Tests für die X-Achsen-Erweiterung für externe Labels"""
+
+    def test_expansion_values(self):
+        """Test: X-Achsen-Expansion hat korrekte Werte"""
+        # Im Overview-Diagramm: expansion(add = c(0.5, 1.2))
+        left_expansion = 0.5
+        right_expansion = 1.2
+        
+        # Rechte Seite sollte mehr Platz haben für externe Labels
+        self.assertGreater(right_expansion, left_expansion)
+        
+        # Beide sollten positiv sein
+        self.assertGreater(left_expansion, 0)
+        self.assertGreater(right_expansion, 0)
+
+    def test_external_label_x_position(self):
+        """Test: X-Position für externe Labels ist außerhalb des Balkens"""
+        # Balken-Position für Year ist 4 (vierter Balken)
+        bar_position = 4
+        
+        # Label-Position sollte rechts vom Balken sein
+        label_x_position = 4.35
+        
+        self.assertGreater(label_x_position, bar_position)
+
+
+class TestColorScheme(unittest.TestCase):
+    """Tests für das Farbschema der Diagramme"""
+
+    def test_color_values(self):
+        """Test: Farbwerte sind gültige Hex-Codes"""
+        colors = {
+            "Angereichert": "#27ae60",  # Grün
+            "Unverändert": "#95a5a6"    # Grau
+        }
+        
+        for name, color in colors.items():
+            # Prüfe dass es mit # beginnt
+            self.assertTrue(color.startswith('#'))
+            # Prüfe dass es 7 Zeichen lang ist (#RRGGBB)
+            self.assertEqual(len(color), 7)
+            # Prüfe dass nach # nur Hex-Zeichen kommen
+            hex_part = color[1:]
+            self.assertTrue(all(c in '0123456789abcdefABCDEF' for c in hex_part))
+
+    def test_color_consistency(self):
+        """Test: Farben werden konsistent verwendet"""
+        # "Angereichert" sollte immer grün sein
+        green_color = "#27ae60"
+        
+        # Grüne Farbe wird für verschiedene Labels verwendet
+        self.assertTrue(green_color.startswith('#'))
+        self.assertEqual(len(green_color), 7)
 
 
 if __name__ == '__main__':

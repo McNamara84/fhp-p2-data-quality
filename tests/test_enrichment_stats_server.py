@@ -264,8 +264,10 @@ class TestHTMLContent(unittest.TestCase):
 
     def test_html_contains_all_chart_sections(self):
         """Test: HTML enthält Sektionen für alle Charts"""
-        # Prüfe dass alle 12 Charts referenziert werden
+        # Prüfe dass alle 14 Charts referenziert werden (1 ISBN + 1 Overview + 12 Element-Charts)
         expected_charts = [
+            "isbn_overview.png",
+            "metadata_overview.png",
             "title_enrichment.png",
             "title_corrections.png",
             "title_total_impact.png",
