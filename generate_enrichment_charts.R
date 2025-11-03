@@ -114,27 +114,22 @@ unchanged <- records_with_isbn_val - filled_after  # Unveränderte Datensätze
 # Erstelle Data Frame für gestapelten Balken
 title_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
-  Anzahl = c(unchanged, filled_after)
+  Status = factor(c("Befüllt", "Unverändert"), levels = c("Befüllt", "Unverändert")),
+  Anzahl = c(filled_after, unchanged)
 )
 
 # Gestapeltes Balkendiagramm erstellen
 p <- ggplot(title_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
-  # Zahlen in den Segmenten
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(title_data, Status == "Befüllt"),
+    data = title_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(title_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),  # Erste Zeile (Befüllt) = 5, Zweite Zeile (Unverändert) = 4
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   # Gesamtzahl über dem Balken
   annotate("text", x = 1, y = records_with_isbn_val, 
@@ -200,27 +195,22 @@ unchanged <- records_with_isbn_val - abbreviations_and_errors_fixed  # Unveränd
 # Erstelle Data Frame für gestapelten Balken
 title_corrections_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
-  Anzahl = c(unchanged, abbreviations_and_errors_fixed)
+  Status = factor(c("Ansetzung angeglichen", "Unverändert"), levels = c("Ansetzung angeglichen", "Unverändert")),
+  Anzahl = c(abbreviations_and_errors_fixed, unchanged)
 )
 
 # Gestapeltes Balkendiagramm erstellen
 p2 <- ggplot(title_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
-  # Zahlen in den Segmenten
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(title_corrections_data, Status == "Ansetzung angeglichen"),
+    data = title_corrections_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(title_corrections_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),  # Erste Zeile (Ansetzung angeglichen) = 5, Zweite Zeile (Unverändert) = 4
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   # Gesamtzahl über dem Balken
   annotate("text", x = 1, y = records_with_isbn_val, 
@@ -361,25 +351,21 @@ unchanged <- records_with_isbn_val - authors_filled_after
 
 authors_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
-  Anzahl = c(unchanged, authors_filled_after)
+  Status = factor(c("Befüllt", "Unverändert"), levels = c("Befüllt", "Unverändert")),
+  Anzahl = c(authors_filled_after, unchanged)
 )
 
 p4 <- ggplot(authors_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(authors_data, Status == "Befüllt"),
+    data = authors_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(authors_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
@@ -431,25 +417,21 @@ unchanged <- records_with_isbn_val - authors_abbrev_and_errors
 
 authors_corrections_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
-  Anzahl = c(unchanged, authors_abbrev_and_errors)
+  Status = factor(c("Ansetzung angeglichen", "Unverändert"), levels = c("Ansetzung angeglichen", "Unverändert")),
+  Anzahl = c(authors_abbrev_and_errors, unchanged)
 )
 
 p5 <- ggplot(authors_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(authors_corrections_data, Status == "Ansetzung angeglichen"),
+    data = authors_corrections_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(authors_corrections_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
@@ -565,25 +547,21 @@ unchanged <- records_with_isbn_val - publisher_filled_after
 
 publisher_enrichment_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
-  Anzahl = c(unchanged, publisher_filled_after)
+  Status = factor(c("Befüllt", "Unverändert"), levels = c("Befüllt", "Unverändert")),
+  Anzahl = c(publisher_filled_after, unchanged)
 )
 
 p7 <- ggplot(publisher_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(publisher_enrichment_data, Status == "Befüllt"),
+    data = publisher_enrichment_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(publisher_enrichment_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
@@ -634,25 +612,21 @@ publisher_abbrev_and_errors <- publisher_abbreviations + publisher_corrections
 
 publisher_corrections_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
-  Anzahl = c(records_with_isbn_val - publisher_abbrev_and_errors, publisher_abbrev_and_errors)
+  Status = factor(c("Ansetzung angeglichen", "Unverändert"), levels = c("Ansetzung angeglichen", "Unverändert")),
+  Anzahl = c(publisher_abbrev_and_errors, records_with_isbn_val - publisher_abbrev_and_errors)
 )
 
 p8 <- ggplot(publisher_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(publisher_corrections_data, Status == "Ansetzung angeglichen"),
+    data = publisher_corrections_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(publisher_corrections_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
@@ -768,25 +742,21 @@ unchanged <- records_with_isbn_val - year_filled_after
 
 year_enrichment_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Befüllt"), levels = c("Unverändert", "Befüllt")),
-  Anzahl = c(unchanged, year_filled_after)
+  Status = factor(c("Befüllt", "Unverändert"), levels = c("Befüllt", "Unverändert")),
+  Anzahl = c(year_filled_after, unchanged)
 )
 
 p10 <- ggplot(year_enrichment_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(year_enrichment_data, Status == "Befüllt"),
+    data = year_enrichment_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(year_enrichment_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
@@ -837,25 +807,21 @@ year_abbrev_and_errors <- year_abbreviations + year_corrections
 
 year_corrections_data <- data.frame(
   Kategorie = "Datensätze mit ISBN",
-  Status = factor(c("Unverändert", "Ansetzung angeglichen"), levels = c("Unverändert", "Ansetzung angeglichen")),
-  Anzahl = c(records_with_isbn_val - year_abbrev_and_errors, year_abbrev_and_errors)
+  Status = factor(c("Ansetzung angeglichen", "Unverändert"), levels = c("Ansetzung angeglichen", "Unverändert")),
+  Anzahl = c(year_abbrev_and_errors, records_with_isbn_val - year_abbrev_and_errors)
 )
 
 p11 <- ggplot(year_corrections_data, aes(x = Kategorie, y = Anzahl, fill = Status)) +
   geom_bar(stat = "identity", width = 0.5) +
+  # Labels mit geom_text und position_stack
   geom_text(
-    data = subset(year_corrections_data, Status == "Ansetzung angeglichen"),
+    data = year_corrections_data,
     aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
                       " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
     position = position_stack(vjust = 0.5),
-    size = 5, fontface = "bold", color = "white"
-  ) +
-  geom_text(
-    data = subset(year_corrections_data, Status == "Unverändert"),
-    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
-                      " (", round(Anzahl / records_with_isbn_val * 100, 2), "%)")),
-    position = position_stack(vjust = 0.5),
-    size = 4, color = "gray30"
+    size = c(5, 4),
+    fontface = c("bold", "plain"),
+    color = c("white", "gray30")
   ) +
   annotate("text", x = 1, y = records_with_isbn_val, 
            label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
