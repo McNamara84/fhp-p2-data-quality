@@ -963,11 +963,8 @@ p13 <- ggplot(overview_data, aes(x = Element, y = Anzahl, fill = Status)) +
     fontface = ifelse(subset(overview_data, Prozent >= 2)$Status == "Angereichert", "bold", "plain"),
     color = ifelse(subset(overview_data, Prozent >= 2)$Status == "Angereichert", "white", "gray30")
   ) +
-  # Spezial-Label für Year "Angereichert" (< 2%) - außerhalb mit Pfeil
-  annotate("segment", x = 4, xend = 4.3, y = year_total / 2, yend = year_total * 3,
-           arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
-           color = "#27ae60", linewidth = 0.8) +
-  annotate("text", x = 4.35, y = year_total * 3,
+  # Spezial-Label für Year "Angereichert" (< 2%) - außerhalb, auf Höhe des grünen Bereichs
+  annotate("text", x = 4.35, y = records_with_isbn_val - (year_total / 2),
            label = paste0(format(year_total, big.mark = ".", decimal.mark = ","), 
                          " (", round((year_total / records_with_isbn_val) * 100, 2), "%)"),
            hjust = 0, size = 3.5, fontface = "bold", color = "#27ae60") +
@@ -1006,7 +1003,9 @@ p13 <- ggplot(overview_data, aes(x = Element, y = Anzahl, fill = Status)) +
   scale_y_continuous(
     labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
     expand = expansion(mult = c(0, 0.15))
-  )
+  ) +
+  # Erweitere x-Achse um Platz für das externe Label zu schaffen (mehr Platz rechts)
+  scale_x_discrete(expand = expansion(add = c(0.5, 1.2)))
 
 output_file_13 <- file.path(output_dir, "metadata_overview.png")
 ggsave(output_file_13, plot = p13, width = 14, height = 10, dpi = 300, bg = "white")
