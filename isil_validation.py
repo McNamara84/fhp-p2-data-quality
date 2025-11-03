@@ -19,8 +19,12 @@ for _, record in tqdm(context, desc="Lese XML", unit="record"):
         for sub in field.findall(".//subfield[@code='a']"):
             if sub.text:
                 code = sub.text.strip()
+                # --- Hinweis: Um die jeweilige Option zu verwenden, kommentiere die entsprechende Zeile aus oder ein. --- 
                 if code.startswith("DE-"):
-                    # 1. Entfernt 'V' oder 'V0' direkt nach 'DE-'
+                    # --- Option 1: Schickt den gefundenden ISIL-Code direkt an die API ---
+                    # isil_codes.add(code)
+                    
+                    # --- Option 2: Entfernt 'V' oder 'V0' direkt nach 'DE-' und schickt dann den bereinigten Code an die API ---
                     cleaned_code = re.sub(r"^DE-?V0?", "DE-", code)
                     isil_codes.add(cleaned_code)
     record.clear()
