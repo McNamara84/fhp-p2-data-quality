@@ -921,4 +921,95 @@ output_file_12 <- file.path(output_dir, "year_total_impact.png")
 ggsave(output_file_12, plot = p12, width = 12, height = 10, dpi = 300, bg = "white")
 cat("✓ Diagramm erstellt:", output_file_12, "\n")
 
+# ============================================================
+# Diagramm 13: Gesamtübersicht aller Metadatenelemente
+# ============================================================
+
+# Berechne Gesamtanreicherung für jedes Element
+title_total <- title_stats$filled_after + title_stats$abbreviation_replaced + title_stats$corrected
+authors_total <- authors_stats$filled_after + authors_stats$abbreviation_replaced + authors_stats$corrected
+publisher_total <- publisher_stats$filled_after + publisher_stats$abbreviation_replaced + publisher_stats$corrected
+year_total <- year_stats$filled_after + year_stats$abbreviation_replaced + year_stats$corrected
+
+# Erstelle Data Frame mit allen 4 Elementen
+overview_data <- data.frame(
+  Element = rep(c("Title", "Authors", "Publisher", "Year"), each = 2),
+  Status = rep(c("Angereichert", "Unverändert"), times = 4),
+  Anzahl = c(
+    title_total, records_with_isbn_val - title_total,
+    authors_total, records_with_isbn_val - authors_total,
+    publisher_total, records_with_isbn_val - publisher_total,
+    year_total, records_with_isbn_val - year_total
+  )
+)
+
+# Setze Factor-Levels für korrekte Reihenfolge
+overview_data$Element <- factor(overview_data$Element, levels = c("Title", "Authors", "Publisher", "Year"))
+overview_data$Status <- factor(overview_data$Status, levels = c("Angereichert", "Unverändert"))
+
+# Berechne Prozentsätze für Conditional Formatting
+overview_data$Prozent <- (overview_data$Anzahl / records_with_isbn_val) * 100
+
+# Erstelle gestapeltes Balkendiagramm
+p13 <- ggplot(overview_data, aes(x = Element, y = Anzahl, fill = Status)) +
+  geom_bar(stat = "identity", width = 0.6, position = "stack") +
+  # Labels NUR für Segmente >= 2% (innerhalb des Balkens)
+  geom_text(
+    data = subset(overview_data, Prozent >= 2),
+    aes(label = paste0(format(Anzahl, big.mark = ".", decimal.mark = ","), 
+                      " (", round(Prozent, 2), "%)")),
+    position = position_stack(vjust = 0.5),
+    size = 3.5,
+    fontface = ifelse(subset(overview_data, Prozent >= 2)$Status == "Angereichert", "bold", "plain"),
+    color = ifelse(subset(overview_data, Prozent >= 2)$Status == "Angereichert", "white", "gray30")
+  ) +
+  # Spezial-Label für Year "Angereichert" (< 2%) - außerhalb mit Pfeil
+  annotate("segment", x = 4, xend = 4.3, y = year_total / 2, yend = year_total * 3,
+           arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+           color = "#27ae60", linewidth = 0.8) +
+  annotate("text", x = 4.35, y = year_total * 3,
+           label = paste0(format(year_total, big.mark = ".", decimal.mark = ","), 
+                         " (", round((year_total / records_with_isbn_val) * 100, 2), "%)"),
+           hjust = 0, size = 3.5, fontface = "bold", color = "#27ae60") +
+  # Gesamtzahl über jedem Balken
+  annotate("text", x = 1:4, y = records_with_isbn_val,
+           label = paste0("Gesamt: ", format(records_with_isbn_val, big.mark = ".", decimal.mark = ",")),
+           vjust = -0.5, size = 4, fontface = "bold", color = "black") +
+  scale_fill_manual(
+    name = "Status",
+    values = c(
+      "Unverändert" = "#95a5a6",
+      "Angereichert" = "#27ae60"
+    )
+  ) +
+  labs(
+    title = "Gesamtübersicht: Anreicherung aller Metadatenelemente",
+    subtitle = "Vergleich der angereicherten Datensätze pro Metadatenelement",
+    x = "Metadatenelement",
+    y = "Anzahl Datensätze"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.text.x = element_text(size = 13, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.x = element_text(size = 13, face = "bold", margin = margin(t = 10)),
+    axis.title.y = element_text(size = 13, face = "bold"),
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_y_continuous(
+    labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE),
+    expand = expansion(mult = c(0, 0.15))
+  )
+
+output_file_13 <- file.path(output_dir, "metadata_overview.png")
+ggsave(output_file_13, plot = p13, width = 14, height = 10, dpi = 300, bg = "white")
+cat("✓ Diagramm erstellt:", output_file_13, "\n")
+
 cat("\n✓ Alle Diagramme erfolgreich erstellt!\n")
