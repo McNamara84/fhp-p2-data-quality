@@ -3,11 +3,13 @@ import csv
 
 LANG_CODES = {
     "ara": {"arabisch", "arabic", "ara"},
-    "eng": {"englisch", "english", "eng"},
-    "ger": {"deutsch", "deutsh", "deutsch (ger)", "ger", "detsch", "deutch", "deutrsch", "deusch", "deutsch+", "deustch"},
+    "eng": {"englisch", "english", "eng", "englisch)"},
+    "ger": {"deutsch", "deutsh", "deutsch (ger)", "ger", "detsch", "deutch", "deutrsch", "deusch", "deutsch+", "deustch", "deutsach", "deutschh", "deutsc", "deutsche"},
     "rus": {"russisch", "russian", "rus"},
     "ukr": {"ukrainisch", "ukrainian", "ukr"},
     "nds": {"plattdeutsch"},
+    "fre": {"fransösich", "französich", "französisch"},
+    "ita": {"italienisch", "itaienisch"},
 }
 
 def replace_name_with_code(element: ET.Element, changed_count: int) -> int:
