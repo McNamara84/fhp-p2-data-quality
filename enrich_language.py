@@ -2,45 +2,53 @@ import xml.etree.ElementTree as ET
 import csv
 
 LANG_CODES = {
-    "ara": "Arabisch",
-    "eng": "Englisch",
-    "ger": "Deutsch",
-    "rus": "Russisch",
-    "ukr": "Ukrainisch",
+    "ara": {"arabisch", "arabic", "ara"},
+    "eng": {"englisch", "english", "eng"},
+    "ger": {"deutsch", "deutsh", "deutsch (ger)", "ger", "detsch", "deutch", "deutrsch", "deusch", "deutsch+", "deustch"},
+    "rus": {"russisch", "russian", "rus"},
+    "ukr": {"ukrainisch", "ukrainian", "ukr"},
+    "nds": {"plattdeutsch"},
 }
 
-def replace_name_with_code(element: ET.Element) -> None:
-    """Replace language names with codes in the 041 field."""
+def replace_name_with_code(element: ET.Element, changed_count: int) -> int:
+    """Sprachennamen mit Sprachcodes ersetzen"""
     for field_041 in element.findall('datafield[@tag="041"]'):
         subfield_a = field_041.find('subfield[@code="a"]')
         if subfield_a is not None:
             lang_name = subfield_a.text.strip().lower()
-            for code, name in LANG_CODES.items():
-                if name.lower() == lang_name:
+            for code, names in LANG_CODES.items():
+                if lang_name in names:
                     subfield_a.text = code
+                    changed_count += 1
                     break
+    return changed_count
 
 def enrich_language(input_file: str, output_file: str = 'language_discrepancies.csv'):
     tree = ET.parse(input_file)
     root = tree.getroot()
 
     discrepancies = []
+    changed_count = 0
+    initial_count = 0
 
     for elem in root.findall('record'):
-        replace_name_with_code(elem)
+        fields_041 = elem.findall('datafield[@tag="041"]')
+        if fields_041:
+            initial_count += len(fields_041)
+        
+        changed_count = replace_name_with_code(elem, changed_count)
         
         # Hole den Inhalt des controlfield tag="008"
         field_008_content = elem.findtext('controlfield[@tag="008"]', default='').strip()
         language_from_008 = field_008_content[35:38].lower()
 
-        # Finde das datafield tag="041"
         field_041 = elem.find('datafield[@tag="041"]')
         language_from_041 = None
 
+        # Wenn ||| im Feld 008, aktualisiere den Sprachcode
         if field_041 is not None:
             language_from_041 = field_041.findtext('subfield[@code="a"]', default='').strip().lower()
             
-            # Wenn ||| im 008, aktualisiere den Sprachcode
             if language_from_008 == "|||":
                 if language_from_041 in LANG_CODES:
                     new_field_008_content = field_008_content[:35] + language_from_041 + field_008_content[38:]
@@ -62,12 +70,14 @@ def enrich_language(input_file: str, output_file: str = 'language_discrepancies.
             else:
                 elem.append(new_field_041)
 
+    print(f"Initially filled 041 fields count: {initial_count}")
+    print(f"Changed 041 fields count: {changed_count}")
+    
     # Schreibe die Diskrepanzen in eine CSV-Datei
     with open(output_file, mode='w', newline='', encoding='utf-8-sig') as file:
         writer = csv.writer(file)
         writer.writerow(['Language from 008', 'Language from 041'])
         writer.writerows(discrepancies)
-
     # Speichere die bearbeitete XML-Datei
     tree.write('enriched_languages.xml', encoding='utf-8', xml_declaration=True)
 

@@ -9,7 +9,6 @@ ger,"englisch, untertitel: deutsch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch, französisch, italienisch, portugiesisch, spanisch"
 ger,"deutsch, englisch, französisch, italienisch, japanisch, polnisch, russisch, spanisch"
-ger,deutsh
 ger,"deutsch, englisch"
 eng,"englisch, spanisch"
 ger,"deutsch, englisch, französisch, spanisch"
@@ -1230,7 +1229,6 @@ ger,"deutsch, englisch"
 ger,"deutsch, englisch"
 ger,"deutsch, arabisch"
 ger,"deutsch, englisch, türkisch"
-ger,deutch
 ger,"deutsch, englisch"
 eng,"arabisch, hebräisch, englisch"
 ger,"deutsch, englisch"
@@ -1575,8 +1573,6 @@ ger,deutsch* englisch*
 ger,deutsch * englisch *
 ger,deutsch * ; englisch*
 ger,deutsch* ; englisch*
-ger,deutch
-ger,deusch
 ger,englisch ; deutsch
 ger,deutschh
 ger,deutsche
@@ -1605,7 +1601,6 @@ ger,ukrainisch ; deutsch
 ger,ukrainisch ; deutsch
 ger,ukrainisch ; deutsch
 ger,deutschh
-ger,deusch
 ger,deutsche
 ger,"deutsch, norwegischh"
 ger,"deutsch, englisch, deutsch (untertitel), deutsch (untertitel für hörgeschädigte)"
@@ -4641,7 +4636,6 @@ ger,"deutsch, englisch, französisch"
 ger,deutach
 ger,deutach
 ger,deutsch/englisch
-ger,deutsh
 ger,deutsche
 ger,deutsche
 ger,"deutsch, deutsch"
@@ -4893,7 +4887,6 @@ ger,deutsch ; englisch ; französisch ; itaienisch ; spanisch
 ger,deutsch ; koreanisch
 ger,deutsch ; englisch
 ger,deutsch ; englisch ; russisch
-ger,detsch
 ger,deutsch ; englisch
 ger,deutsch ; englisch
 ger,deutsch ; englisch
@@ -5026,7 +5019,6 @@ ger,deutsch ; englisch
 ger,deutsch ; englisch
 ger,deutsch ; englisch
 ger,deutsch - spanisch
-eng,english
 ger,deutsch - spanisch
 ger,deutsch - englisch
 ger,deutsch - englisch
@@ -5101,14 +5093,12 @@ ger,deutsch ; englisch
 ger,deutsch ; englisch ; französisch; itaienisch ; spanisch
 ger,deutsch ; englisch ; französisch ; itaienisch ; spanisch
 ger,deutsch ; englisch ; türkisch
-eng,english
 ger,deutsch ; englisch
 ger,deutsch ; englisch ; türkisch
 ger,deutsch ; französisch
 ger,deutsch ; englisch
 ger,deutsch ; englisch
 ger,deutsch ; englisch
-eng,english
 ger,deutsch ; englisch ; spanisch
 ger,deutsch ; englisch ; griechisch ; russisch ; türkisch
 ger,deutsch ; englisch
@@ -8235,7 +8225,6 @@ ger,"deutsch, englisch"
 ger,"englisch, deutsch"
 ger,"deutsch, niedersorbisch"
 ger,"englisch, deutsch, italienisch, spanisch [und andere]"
-eng,english
 ger,"deutsch, sorbisch"
 ger,niedersorbisch mit sorbisch-deutschen spickzetteln auf den jeweiligen seiten.
 ger,"deutsch, englisch"
@@ -8245,9 +8234,6 @@ ger,"deutsch, englisch, italienisch, türkisch"
 ger,"holländisch, englisch, französisch, deutsch, italienisch, spanisch"
 ger,"deutsch, englisch"
 ger,"englisch, deutsch, türkisch"
-eng,english
-eng,english
-eng,english
 ger,"koreanisch, deutsch"
 ger,"englisch, deutsch, türkisch"
 ger,"deutsch, englisch, tschechisch"
@@ -8279,7 +8265,6 @@ ger,"deutsch, englisch, spanisch, tschechisch, ungarisch"
 ger,"deutsch, englisch"
 ger,"deutsch, koreanisch"
 ger,"deutsch, englisch"
-ger,deusch
 ger,"dänisch, deutsch"
 ger,deutsch englisch
 ger,"deutsch, englisch"
@@ -8347,8 +8332,6 @@ ger,"englisch, deutsch"
 ger,"deutsch, französisch"
 ger,"englisch, deutsch, italienisch, spanisch, isländisch, portugiesisch, rumänisch, türkisch"
 ger,"deutsch, englisch"
-eng,english
-eng,english
 ger,"deutsch, englisch"
 ger,"deutsch, russisch"
 ger,"deutsch, englisch"
@@ -8369,7 +8352,6 @@ ger,"deutsch, englisch, spanisch"
 ger,"englisch, deutsch, italienisch, isländisch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch, türkisch"
-eng,english
 ger,"beiträge teilweise deutsch, teilweise sorbisch, teilweise russisch"
 ger,"deutsch, sorbisch"
 ger,"deutsch, niedersorbisch"
@@ -8415,86 +8397,6 @@ ger,niedersorbisch und deutsche übersetzung einiger texte
 ger,"deutsch, obersorbisch"
 ger,"deutsch, englisch"
 ger,"deutsch, französisch"
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
-eng,english
 ger,"englisch, deutsch, italienisch, spanisch, isländisch, portugiesisch, rumänisch, türkisch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch"
@@ -8608,7 +8510,6 @@ ger,"deutsch, englisch"
 ger,"deutsch, holländisch, englisch, arabisch, französisch, türkisch"
 ger,englisch deutsch spanisch türkisch russisch ukrainisch
 ger,"arabisch, holländisch, englisch, französisch, deutsch, türkisch"
-ger,deutch
 ger,"englisch, deutsch"
 ger,"englisch, deutsch"
 ger,"deutsch, englisch, türkisch"
@@ -8658,11 +8559,9 @@ ger,"deutsch, englisch"
 ger,"deutsch, englisch"
 eng,ger / englisch
 ger,deutsch / plattdeutsch
-ger,deutsh
 ger,deutsch / englisch
 ger,deutsch / englisch
 ger,englisch ; portugiesisch ; deutsch ; spanisch ; italienisch
-ger,deusch
 ger,deutscch
 ger,deutscch
 ger,englisch / deutsch
@@ -8676,201 +8575,44 @@ ger,deutsch / arabisch
 ger,deutsch / arabisch
 ger,deutsch ; paschto
 ger,deutsch / persisch
-ger,deutch
 ger,"englisch, deutsch"
 ger,"englisch, deutsch"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"original: spanisch (e), übersetzt: deutsch (ger)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): japanisch (jpn)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): japanisch (jpn)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,deutsch (dolby digital 2.0)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): niederländisch (dut)"
 ger,"deutsch (ger), originalsprache(n): schwedisch (swe)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch; rumänisch
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"türkisch, deutsch, englisch"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): japanisch (jpn)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,deutsch (ger) ; englisch (eng)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,deutsch; polnisch
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch / englisch
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): japanisch (jpn)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): niederländisch (dut)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
@@ -8886,40 +8628,23 @@ ger,"deutsch (ger), originalsprache(n): japanisch (jpn)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1), spanisch (dolby digital 5.1)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): dänisch (dan)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,orignalsprache: italienisch; übersetzt: deutsch
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch, übersetzt aus dem amerikanischen"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
@@ -8931,34 +8656,17 @@ ger,"deutsch (ger), originalsprache(n): italienisch (ita)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): spanisch (spa)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch; fransösich
 ger,deutsch; russisch
 ger,deutsch; russisch
-ger,deutsch (ger)
 ger,deutsch; italienisch
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch; polnisch
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch; französich
 ger,"niederländisch (dolby digital 2.0), deutsch (dolby digital 2.0), englisch (dolby digital 5.1), französisch (dolby digital 2.0)"
 ger,"deutsch, spanisch, englisch, türkisch, italienisch, portugiesisch (untertitel: deutsch; englisch)"
@@ -8982,10 +8690,7 @@ ger,"georgisch, deutsch"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (dolby digital 2.0 surround), deutsch (dolby digital 5.1)"
 eng,"german (dolby digital 5.1), german (dts), english (dolby digital 5.1)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): dänisch (dan)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 2.0), deutsch (dolby digital 5.1), unbekannt (dolby digital 5.1)"
 ger,"deutsch (dolby surround), englisch (dolby digital 5.1), tschechisch (dolby surround), ungarisch (dolby surround)"
 ger,deutsch (dolby digital 2.0)
@@ -9010,7 +8715,6 @@ eng,"german (dolby digital 5.1), english (dolby digital 5.1), french (dolby digi
 ger,"deutsch, englisch"
 ger,deutsch (stereo)
 ger,"deutsch (ger), russisch (russ.)"
-ger,deutsch (ger)
 ger,"deutsch (ger), englisch (engl.)"
 ger,"deutsch (dolby digital 2.0), deutsch (dolby digital 5.1), englisch (dolby digital 2.0)"
 ger,deutsch (dolby digital 5.1)
@@ -9042,7 +8746,6 @@ ger,"deutsch (dolby digital 5.1), deutsch (dts 5.1), englisch (dolby digital 5.1
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 2.0)"
 eng,"german (dolby digital 5.1), english (dolby digital 5.1)"
 ger,deutsch (dolby digital 2.0)
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1)"
 eng,"german (dolby digital 5.1), german (dts 5.1), english (dolby digital 5.1)"
 ger,deutsch (dolby digital 2.0)
@@ -9060,7 +8763,6 @@ ger,"deutsch (dolby digital 2.0), englisch (dolby digital 1.0), englisch (mono)"
 eng,"german (dolby digital 5.1), english (dolby digital 5.1)"
 ger,"deutsch (stereo), englisch (stereo)"
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 2.0 surround), englisch (dolby digital 2.0 surround), spanisch (dolby digital 2.0 surround)"
 eng,"german (dolby digital 5.1), english (dolby digital 5.1)"
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1)"
@@ -9091,7 +8793,6 @@ ger,"deutsch (dolby digital 5.1), deutsch (dts), englisch (dolby digital 5.1)"
 ger,"deutsch (dolby digital 2.0), englisch (dolby digital 2.0), französisch (dolby digital 2.0)"
 ger,"deutsch (dolby digital 5.1), deutsch (dts), englisch (dolby digital 5.1)"
 eng,"german (dolby digital 5.1), english (dolby digital 2.0 surround)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1)"
 ger,deutsch (dolby digital 5.1)
 ger,"deutsch (stereo), englisch (stereo), spanisch (stereo)"
@@ -9106,165 +8807,67 @@ ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (dolby digital 2.0 surround), deutsch (dolby surround), englisch (dolby digital 2.0 surround), englisch (dolby surround), spanisch (dolby digital 2.0 surround), spanisch (dolby surround)"
 ger,"deutsch (dolby digital 5.1), deutsch (dts), englisch (dolby digital 5.1)"
 ger,"deutsch (dolby digital 2.0 surround), deutsch (dolby digital 5.1)"
-ger,deutsch (ger)
 eng,"german (dolby digital 5.1), english (dolby digital 5.1)"
 ger,"deutsch (dolby digital 5.1), deutsch (dts), englisch (dolby digital 5.1)"
-ger,deutsch (ger)
 eng,"german (dolby digital 5.1), english (dolby digital 5.1)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), isländisch (dolby digital 5.1), englisch (dolby digital 5.1), polnisch (dolby digital 5.1)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,deutsch (ger) ; englisch (engl)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1), italienisch (dolby digital 5.1)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): italienisch (ita)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,deutsch (ger) ; amerikanisch (amr)
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1), türkisch (dolby digital 5.1); italienisch (dolby digital 5.1)"
-ger,deutsch (ger)
-ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
+ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1)"
 ger,deutsch (dd stereo)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): russisch (rus)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 eng,"german (dolby digital 5.1), english (dolby digital 5.1), turkish (dolby digital 5.1)"
 eng,"german (dolby digital 5.1), english (dolby digital 5.1), turkish (dolby digital 5.1), bulgarian (dolby digital 5.1)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): spanisch (spa)"
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch, englisch (untertitel: deutsch, englisch, türkisch, italienisch)"
 ger,"deutsch, englisch (untertitel: deutsch)"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch, englisch"
-ger,deutsch (ger)
-ger,deutsch (ger)
-ger,deutsch (ger)
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
 ger,"deutsch (ger), originalsprache(n): englisch (eng)"
-ger,deutsch (ger)
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1), türkisch (dolby digital 5.1)"
 ger,"deutsch (dolby digital 5.1), englisch (dolby digital 5.1), türkisch (dolby digital 5.1)"
 ger,"deutsch (ger), originalsprache(n): französisch (fre)"
@@ -9273,7 +8876,6 @@ ger,"deutsch, englisch (untertitel: deutsch)"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch, türkisch (untertitel: deutsch, englisch, türkisch, arabisch, hindi, isländisch)"
 ger,"deutsch, englisch"
-ger,deustch
 ger,"deutsch, englisch, französisch, russisch"
 ger,"deutsch, englisch"
 ger,"deutsch,dänisch"
@@ -9310,7 +8912,7 @@ ger,"deutsch, plattdeutsch"
 ger,deutsch/plattdeutsch
 ger,"deutsch, plattdeutsch"
 ger,"deutsch, plattdeutsch"
-ger,plattdeutsch
+ger,nds
 ger,"deutsch, plattdeutsch"
 ger,"deutsch, plattdeutsch"
 ger,"deutsch, plattdeutsch"
@@ -9449,7 +9051,6 @@ ger,deutsch ; englisch
 ger,"deutsch, arabisch, farsi"
 ger,"deutsch, persisch"
 ger,"deutsch, englisch"
-ger,deutrsch
 ger,"deutsch, französisch"
 ger,"deutsch, französisch"
 ger,"deutsch, englisch"
@@ -9470,7 +9071,6 @@ ger,"deutsch, englisch"
 ger,deutsch ; ukrainisch
 ger,"deutsch, spanisch"
 ger,"deutsch, französisch"
-ger,deutch
 ger,deutsch ; arabisch
 ger,"deutsch, niederländisch, finnisch, norwegisch, schwedisch"
 ger,deutsch ; englisch
@@ -9499,7 +9099,7 @@ ger,persisch ;deutsch
 ger,deutsch ; französisch ; polnisch ; türkisch
 ger,"deutsch, arabisch"
 ger,"englisch, deutsch"
-ger,plattdeutsch
+ger,nds
 ger,"deutsch, englisch"
 ger,deutsch ; ukrainisch
 ger,"deutsch , originalsprache: französisch"
@@ -9637,7 +9237,6 @@ ger,"deutsch, englisch, polnisch, türkisch, ungarisch"
 ger,"deutsch, englisch, türkisch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch, französisch, italienisch"
-ger,detsch
 ger,"englisch, deutsch"
 ger,"deutsch, englisch, italienisch"
 ger,"deutsch, englisch, französisch, spanisch"
@@ -9787,7 +9386,6 @@ ger,"deutsch, englisch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch"
 ger,"deutsch, englisch"
-ger,deutsch+
 ger,"deutsch, englisch"
 ger,"deutsch, französisch, italienisch, niederländisch, spanisch"
 ger,"deutsch, englisch, französisch, spanisch"
@@ -9795,7 +9393,6 @@ ger,"deutsch, englisch"
 ger,"deutsch, arabisch"
 ger,"deutsch, englisch"
 ger,"deutsch, französisch"
-ger,deustch
 ger,"deutsch, englisch, italienisch, türkisch"
 ger,"deutsch, englisch, italienisch"
 ger,"deutsch, englisch, spanisch, französisch, italienisch"
