@@ -131,44 +131,45 @@ python bib_counter.py
 
 ```
 fhp-p2-data-quality/
-├── start.py                          # Main GUI application
-├── requirements.txt                   # Python dependencies
+├── start.py                              # Main GUI application
+├── requirements.txt                       # Python dependencies
 │
 ├── Data Quality Checks/
-│   ├── check_primary_key_unique.py   # Primary key validation
-│   ├── check_isbn.py                 # ISBN validation
-│   ├── check_leader_element.py       # MARC21 leader validation
-│   ├── check_008_datum.py            # Date field validation
-│   ├── check_duplicate_identifiers.py # Duplicate ISBN/ISSN detection
-│   └── isil_validation.py            # ISIL code validation
+│   ├── check_primary_key.py              # Primary key validation
+│   ├── check_isbn.py                     # ISBN validation
+│   ├── check_leader.py                   # MARC21 leader validation
+│   ├── check_date_field.py               # Date field validation (008)
+│   ├── check_duplicate_identifiers.py    # Duplicate ISBN/ISSN detection
+│   └── validate_isil_codes.py            # ISIL code validation
 │
 ├── Data Analysis/
-│   ├── show_elements.py              # List metadata elements
-│   ├── show_elements_quantity.py     # Analyze element quantities
-│   ├── bib_counter.py                # Count possession records
-│   ├── auswertung_bib_counts.py      # Analyze possession counts
-│   └── auswertung_lang_discrep.py    # Analyze language discrepancies
+│   ├── analyze_elements_list.py          # List metadata elements
+│   ├── analyze_elements_quantity.py      # Analyze element quantities
+│   ├── analyze_possession_counts.py      # Count possession records (049 tags)
+│   ├── analyze_bib_counts_stats.py       # Analyze possession count statistics
+│   └── analyze_language_discrepancies.py # Analyze language discrepancies
 │
 ├── Data Processing/
-│   ├── datensaetze_nach_besitz.py    # Split by possession
-│   ├── datensaetze_nach_quelle.py    # Split by source
-│   ├── split_large_xml.py            # Split large XML files
-│   └── enrich_language.py            # Language enrichment
+│   ├── split_by_possession.py            # Split by possession (ISIL)
+│   ├── split_by_source.py                # Split by source (field 040)
+│   ├── split_large_xml.py                # Split large XML files
+│   └── enrich_language.py                # Language enrichment
 │
 ├── Metadata Enrichment/
-│   ├── enrich_metadata.py            # Main enrichment script
-│   ├── enrichment_dialog.py          # Progress dialog
-│   ├── statistics_dialog.py          # Statistics display
-│   ├── enrichment_stats_server.py    # Statistics web server
-│   └── generate_enrichment_charts.R  # R script for visualizations
+│   ├── enrich_metadata.py                # Main enrichment script
+│   ├── enrichment_dialog.py              # Progress dialog
+│   ├── statistics_dialog.py              # Statistics display
+│   ├── enrichment_stats_server.py        # Statistics web server
+│   └── generate_enrichment_charts.R      # R script for visualizations
 │
 ├── Utilities/
-│   ├── marc_utils.py                 # MARC21 utility functions
-│   └── tag_meanings.py               # MARC21 tag descriptions
+│   ├── marc_utils.py                     # MARC21 utility functions
+│   └── tag_meanings.py                   # MARC21 tag descriptions
 │
-└── tests/                            # Unit tests
+└── tests/                                # Unit tests
     ├── test_check_isbn.py
-    ├── test_check_primary_key_unique.py
+    ├── test_check_primary_key.py
+    ├── test_analyze_elements_quantity.py
     ├── test_chart_generation.py
     ├── test_enrichment_stats_server.py
     └── ...
@@ -192,17 +193,21 @@ The GitHub Actions workflow runs the same tests automatically on every pull requ
 ## Output Files
 
 The scripts generate various output files:
-- `metadatenelemente.txt` - List of all metadata elements
-- `metadatenelemente_quantity.csv` - Metadata element quantities
-- `bib_counts.csv` - Possession record counts
+- `elements_list.txt` - List of all metadata elements
+- `elements_quantity.csv` - Metadata element quantities
+- `elements_quantity_008_details.csv` - Detailed analysis of 008 field
+- `elements_quantity_008_values.csv` - Distinct values from 008 field
+- `elements_quantity_969_details.csv` - Detailed analysis of 969 field
+- `possession_counts.csv` - Possession record counts (049 tags)
+- `book_counts.csv` - Book counts by library
 - `isil_matching_results.csv` - ISIL validation results
 - `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
 - `voebvoll-20241027_enriched_stats.json` - Enrichment statistics
 - `enrichment_charts/*.png` - Statistical visualizations
 
 Split records are saved in:
-- `nach_besitz/` - Records split by possession (ISIL)
-- `nach_quelle/` - Records split by source
+- `output_by_possession/` - Records split by possession (ISIL)
+- `output_by_source/` - Records split by source
 
 ## License
 
