@@ -388,17 +388,17 @@ def main() -> None:
     progress_bar = ttk.Progressbar(frm, mode="indeterminate", length=300)
 
     buttons = [
-        ("Nach Besitz splitten", "datensaetze_nach_besitz.py"),
-        ("Nach Quelle splitten", "datensaetze_nach_quelle.py"),
-        ("Metadatenelemente auflisten", "show_elements.py"),
-        ("Metadatenelemente (Menge) analysieren", "show_elements_quantity.py"),
-        ("Primärschlüssel prüfen", "check_primary_key_unique.py"),
+        ("Nach Besitz splitten", "split_by_possession.py"),
+        ("Nach Quelle splitten", "split_by_source.py"),
+        ("Metadatenelemente auflisten", "analyze_elements_list.py"),
+        ("Metadatenelemente (Menge) analysieren", "analyze_elements_quantity.py"),
+        ("Primärschlüssel prüfen", "check_primary_key.py"),
         ("ISBN prüfen", "check_isbn.py"),
-        ("Leader prüfen", "check_leader_element.py"),
-        ("Datum prüfen", "check_008_datum.py"),
+        ("Leader prüfen", "check_leader.py"),
+        ("Datum prüfen", "check_date_field.py"),
         ("Doppelte ISBN/ISSN prüfen", "check_duplicate_identifiers.py"),
-        ("ISIL-Codes validieren", "isil_validation.py"),
-        ("Besitznachweise zählen", "bib_counter.py"),
+        ("ISIL-Codes validieren", "validate_isil_codes.py"),
+        ("Besitznachweise zählen", "analyze_possession_counts.py"),
     ]
 
     for label, script in buttons:

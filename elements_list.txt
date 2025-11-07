@@ -1,0 +1,42 @@
+<controlfield tag="001"> -> Kontrollnummer
+<controlfield tag="007"> -> Physische Beschreibung / Medientyp
+<controlfield tag="008"> -> Festcodierte Daten (Datum, Sprache, Land, etc.)
+<datafield tag="020" ind1=" " ind2=" "> -> ISBN
+<datafield tag="022" ind1=" " ind2=" "> -> ISSN
+<datafield tag="040" ind1=" " ind2=" "> -> Katalogisierungsquelle
+<datafield tag="041" ind1=" " ind2=" "> -> Sprachencode
+<datafield tag="049" ind1=" " ind2=" "> -> Lokale Besitzinformation
+<datafield tag="084" ind1=" " ind2=" "> -> Klassifikationsnummer
+<datafield tag="100" ind1="0" ind2=" "> -> Personenname (Vorname zuerst)
+<datafield tag="110" ind1="0" ind2=" "> -> Körperschaftsname
+<datafield tag="240" ind1="0" ind2=" "> -> Einheitstitel
+<datafield tag="245" ind1="0" ind2="0"> -> Haupttitel (ohne Zusatz)
+<datafield tag="245" ind1="0" ind2="1"> -> Haupttitel (mit Zusatz)
+<datafield tag="245" ind1="0" ind2="2"> -> Haupttitel (mit Angabe paralleler Titel)
+<datafield tag="245" ind1="0" ind2="3"> -> Haupttitel (ohne Verfasserangabe)
+<datafield tag="245" ind1="0" ind2="4"> -> Haupttitel und Urheberangabe
+<datafield tag="245" ind1="0" ind2="5"> -> Haupttitel (gemischte Verfasserangabe)
+<datafield tag="245" ind1="0" ind2="6"> -> Haupttitel (anonym)
+<datafield tag="245" ind1="0" ind2="7"> -> Haupttitel (mehrere Werke)
+<datafield tag="245" ind1="0" ind2="8"> -> Haupttitel (Sammelwerk)
+<datafield tag="245" ind1="0" ind2="9"> -> Haupttitel (Sonderfälle)
+<datafield tag="246" ind1="1" ind2="1"> -> Variantenform des Titels
+<datafield tag="246" ind1="1" ind2="3"> -> Titelzusatz
+<datafield tag="250" ind1=" " ind2=" "> -> Ausgabebezeichnung
+<datafield tag="260" ind1=" " ind2=" "> -> Verlags- und Erscheinungsangaben
+<datafield tag="300" ind1=" " ind2=" "> -> Physische Beschreibung (Umfang)
+<datafield tag="336" ind1=" " ind2=" "> -> Inhaltstyp
+<datafield tag="338" ind1=" " ind2=" "> -> Datenträgertyp
+<datafield tag="490" ind1="0" ind2="#"> -> Reihentitel (ungeprüfte Reihe)
+<datafield tag="500" ind1=" " ind2=" "> -> Allgemeine Anmerkung
+<datafield tag="520" ind1=" " ind2=" "> -> Zusammenfassung oder Abstract
+<datafield tag="520" ind1="1" ind2=" "> -> Rezension oder Bewertung
+<datafield tag="653" ind1=" " ind2=" "> -> Freie Schlagwörter
+<datafield tag="653" ind1=" " ind2="1"> -> Person als Schlagwort
+<datafield tag="653" ind1=" " ind2="2"> -> Organisation als Schlagwort
+<datafield tag="653" ind1=" " ind2="4"> -> Chronologische Angabe als Schlagwort
+<datafield tag="653" ind1=" " ind2="5"> -> Geografische Angabe als Schlagwort
+<datafield tag="653" ind1=" " ind2="6"> -> Gattung/Formschlagwort
+<datafield tag="700" ind1="0" ind2=" "> -> Weiterer Personenname (Vorname zuerst)
+<datafield tag="773" ind1="0" ind2="1"> -> Angaben zur übergeordneten Einheit
+<datafield tag="969" ind1="#" ind2="#"> -> Lokale administrative Daten (Systeminformationen)
