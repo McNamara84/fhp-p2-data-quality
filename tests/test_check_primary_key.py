@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from check_primary_key import analyze_primary_key_unique
+from data_quality.check_primary_key import analyze_primary_key_unique
 
 SAMPLE_XML = textwrap.dedent(
     """

@@ -5,8 +5,8 @@ import threading
 import webbrowser
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
-from enrichment_dialog import EnrichmentProgressDialog
-from statistics_dialog import show_statistics
+from metadata_enrichment.enrichment_dialog import EnrichmentProgressDialog
+from metadata_enrichment.statistics_dialog import show_statistics
 
 
 def run_enrichment(root: tk.Tk) -> None:
@@ -388,17 +388,17 @@ def main() -> None:
     progress_bar = ttk.Progressbar(frm, mode="indeterminate", length=300)
 
     buttons = [
-        ("Nach Besitz splitten", "split_by_possession.py"),
-        ("Nach Quelle splitten", "split_by_source.py"),
-        ("Metadatenelemente auflisten", "analyze_elements_list.py"),
-        ("Metadatenelemente (Menge) analysieren", "analyze_elements_quantity.py"),
-        ("Primärschlüssel prüfen", "check_primary_key.py"),
-        ("ISBN prüfen", "check_isbn.py"),
-        ("Leader prüfen", "check_leader.py"),
-        ("Datum prüfen", "check_date_field.py"),
-        ("Doppelte ISBN/ISSN prüfen", "check_duplicate_identifiers.py"),
-        ("ISIL-Codes validieren", "validate_isil_codes.py"),
-        ("Besitznachweise zählen", "analyze_possession_counts.py"),
+        ("Nach Besitz splitten", "data_processing/split_by_possession.py"),
+        ("Nach Quelle splitten", "data_processing/split_by_source.py"),
+        ("Metadatenelemente auflisten", "data_analysis/analyze_elements_list.py"),
+        ("Metadatenelemente (Menge) analysieren", "data_analysis/analyze_elements_quantity.py"),
+        ("Primärschlüssel prüfen", "data_quality/check_primary_key.py"),
+        ("ISBN prüfen", "data_quality/check_isbn.py"),
+        ("Leader prüfen", "data_quality/check_leader.py"),
+        ("Datum prüfen", "data_quality/check_date_field.py"),
+        ("Doppelte ISBN/ISSN prüfen", "data_quality/check_duplicate_identifiers.py"),
+        ("ISIL-Codes validieren", "data_quality/validate_isil_codes.py"),
+        ("Besitznachweise zählen", "data_analysis/analyze_possession_counts.py"),
     ]
 
     for label, script in buttons:

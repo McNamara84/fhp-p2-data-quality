@@ -1,5 +1,8 @@
 import xml.etree.ElementTree as ET
-from tag_meanings import tag_meanings
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utilities.tag_meanings import tag_meanings
 
 def parse_marc21(file_path, output_file):
     ns = {'marc': 'http://www.loc.gov/MARC21/slim'}

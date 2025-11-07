@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
-
-from marc_utils import percentage_of_records
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utilities.marc_utils import percentage_of_records
 
 
 def calculate_leader_01234cam_percentage(xml_file_path: str) -> float:

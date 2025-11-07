@@ -1,12 +1,11 @@
 import csv
 from pathlib import Path
 import textwrap
-import xml.etree.ElementTree as ET
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from analyze_elements_quantity import parse_008_field, parse_marc21_quantity
+from data_analysis.analyze_elements_quantity import parse_008_field, parse_marc21_quantity
 
 SAMPLE_XML = textwrap.dedent(
     """

@@ -1,6 +1,9 @@
 import xml.etree.ElementTree as ET
 from typing import Iterable
-from marc_utils import split_records
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utilities.marc_utils import split_records
 import csv
 
 def split_by_besitz(input_file: str = 'voebvoll-20241027.xml', output_dir: str = 'output_by_possession', csv_file: str = 'book_counts.csv') -> None:

@@ -1,7 +1,10 @@
 import xml.etree.ElementTree as ET
 import csv
 from collections import defaultdict
-from tag_meanings import tag_meanings
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utilities.tag_meanings import tag_meanings
 
 # Common language codes used in MARC21 field 008
 LANG_CODES = {

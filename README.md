@@ -115,16 +115,16 @@ You can also run scripts individually from the command line:
 
 ```bash
 # Check ISBN validity
-python check_isbn.py
+python data_quality/check_isbn.py
 
 # Split records by possession
-python datensaetze_nach_besitz.py
+python data_processing/split_by_possession.py
 
 # Validate ISIL codes
-python isil_validation.py
+python data_quality/validate_isil_codes.py
 
 # Count possession records
-python bib_counter.py
+python data_analysis/analyze_possession_counts.py
 ```
 
 ## Project Structure
@@ -132,9 +132,10 @@ python bib_counter.py
 ```
 fhp-p2-data-quality/
 ├── start.py                              # Main GUI application
-├── requirements.txt                       # Python dependencies
+├── requirements.txt                      # Python dependencies
 │
-├── Data Quality Checks/
+├── data_quality/                         # Data Quality Checks
+│   ├── __init__.py
 │   ├── check_primary_key.py              # Primary key validation
 │   ├── check_isbn.py                     # ISBN validation
 │   ├── check_leader.py                   # MARC21 leader validation
@@ -142,37 +143,46 @@ fhp-p2-data-quality/
 │   ├── check_duplicate_identifiers.py    # Duplicate ISBN/ISSN detection
 │   └── validate_isil_codes.py            # ISIL code validation
 │
-├── Data Analysis/
+├── data_analysis/                        # Data Analysis
+│   ├── __init__.py
 │   ├── analyze_elements_list.py          # List metadata elements
 │   ├── analyze_elements_quantity.py      # Analyze element quantities
 │   ├── analyze_possession_counts.py      # Count possession records (049 tags)
 │   ├── analyze_bib_counts_stats.py       # Analyze possession count statistics
 │   └── analyze_language_discrepancies.py # Analyze language discrepancies
 │
-├── Data Processing/
+├── data_processing/                      # Data Processing
+│   ├── __init__.py
 │   ├── split_by_possession.py            # Split by possession (ISIL)
 │   ├── split_by_source.py                # Split by source (field 040)
 │   ├── split_large_xml.py                # Split large XML files
 │   └── enrich_language.py                # Language enrichment
 │
-├── Metadata Enrichment/
+├── metadata_enrichment/                  # Metadata Enrichment
+│   ├── __init__.py
 │   ├── enrich_metadata.py                # Main enrichment script
 │   ├── enrichment_dialog.py              # Progress dialog
 │   ├── statistics_dialog.py              # Statistics display
 │   ├── enrichment_stats_server.py        # Statistics web server
-│   └── generate_enrichment_charts.R      # R script for visualizations
+│   ├── generate_enrichment_charts.R      # R script for visualizations
+│   └── install_r_packages.R              # R package installer
 │
-├── Utilities/
+├── utilities/                            # Utilities
+│   ├── __init__.py
 │   ├── marc_utils.py                     # MARC21 utility functions
 │   └── tag_meanings.py                   # MARC21 tag descriptions
 │
-└── tests/                                # Unit tests
-    ├── test_check_isbn.py
-    ├── test_check_primary_key.py
-    ├── test_analyze_elements_quantity.py
-    ├── test_chart_generation.py
-    ├── test_enrichment_stats_server.py
-    └── ...
+├── tests/                                # Unit tests
+│   ├── test_check_isbn.py
+│   ├── test_check_primary_key.py
+│   ├── test_analyze_elements_quantity.py
+│   ├── test_chart_generation.py
+│   ├── test_enrichment_stats_server.py
+│   └── ...
+│
+├── output_by_possession/                 # Output: Records split by possession
+├── output_by_source/                     # Output: Records split by source
+└── enrichment_charts/                    # Output: Statistical visualizations
 ```
 
 ## Running Tests
