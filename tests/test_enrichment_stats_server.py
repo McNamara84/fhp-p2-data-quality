@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from enrichment_stats_server import StatsRequestHandler, start_stats_server
+from metadata_enrichment.enrichment_stats_server import StatsRequestHandler, start_stats_server
 
 
 class TestWebserverBasics(unittest.TestCase):

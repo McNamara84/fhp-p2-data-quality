@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from check_duplicate_identifiers import analyze_identifier_duplicates
+from data_quality.check_duplicate_identifiers import analyze_identifier_duplicates
 
 SAMPLE_XML = textwrap.dedent(
     """

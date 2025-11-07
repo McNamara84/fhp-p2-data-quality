@@ -17,7 +17,7 @@ from pathlib import Path
 # Füge das Projektverzeichnis (Parent von tests/) zum Python-Pfad hinzu
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from enrich_metadata import convert_author_to_marc_format, is_abbreviation
+from metadata_enrichment.enrich_metadata import convert_author_to_marc_format, is_abbreviation
 
 
 def test_real_case_bystedt_karen():

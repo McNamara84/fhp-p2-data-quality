@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from check_isbn import (
+from data_quality.check_isbn import (
     analyze_isbn,
     is_valid_isbn10,
     is_valid_isbn13,
