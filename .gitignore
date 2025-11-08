@@ -15,4 +15,7 @@ voebvoll-20241027_enriched_stats.json
 voebvoll-20241027_enriched.xml
 enrichment_charts/
 book_counts.csv
+bib_counts.csv
 elements_list.txt
+language_discrepancies.csv
+elements_quantity.csv
