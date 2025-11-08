@@ -5,11 +5,11 @@ import csv
 import time
 from tqdm import tqdm
 
-# 1) XML-Datei einlesen
+# 1) Read XML file
 xml_file = "voebvoll-20241027.xml"
 isil_codes = set()
 
-# 2) ISIL-Codes extrahieren aus allen Records 
+# 2) Extract ISIL codes from all records
 print("Starte Extraktion der ISIL-Codes ...")
 
 context = etree.iterparse(xml_file, events=("end",), tag="record")
@@ -19,12 +19,12 @@ for _, record in tqdm(context, desc="Lese XML", unit="record"):
         for sub in field.findall(".//subfield[@code='a']"):
             if sub.text:
                 code = sub.text.strip()
-                # --- Hinweis: Um die jeweilige Option zu verwenden, kommentiere die entsprechende Zeile aus oder ein. --- 
+                # Note: To use a specific option, uncomment/comment the corresponding line
                 if code.startswith("DE-"):
-                    # --- Option 1: Schickt den gefundenden ISIL-Code direkt an die API ---
+                    # Option 1: Send the found ISIL code directly to the API
                     # isil_codes.add(code)
                     
-                    # --- Option 2: Entfernt 'V' oder 'V0' direkt nach 'DE-' und schickt dann den bereinigten Code an die API ---
+                    # Option 2: Remove 'V' or 'V0' directly after 'DE-' and send the cleaned code to the API
                     cleaned_code = re.sub(r"^DE-?V0?", "DE-", code)
                     isil_codes.add(cleaned_code)
     record.clear()
@@ -33,7 +33,7 @@ for _, record in tqdm(context, desc="Lese XML", unit="record"):
 
 print(f"Anzahl unterschiedlicher ISIL-Codes gefunden: {len(isil_codes)}")
 
-# 3) Überprüfen der Codes bei API
+# 3) Check codes with API
 results = []
 base_url = "https://sigel.staatsbibliothek-berlin.de/api/org/"
 
@@ -49,14 +49,14 @@ for code in tqdm(sorted(isil_codes), desc="Prüfe ISILs", unit="code"):
             status = f"HTTP_{resp.status_code}"
     except Exception as e:
         status = f"ERROR_{str(e)}"
-        # Hier die spezielle Ersetzung:
+        # Special replacement:
         if "list index out of range" in status:
             status = "INVALID ISILs"
 
     results.append({"ISIL": code, "Status": status, "Name": bibliothek_name})
-    time.sleep(0.05)  # kleine Pause für API-Stabilität
+    time.sleep(0.05)  # Small pause for API stability
 
-# 4) Ergebnisse in eine CSV schreiben
+# 4) Write results to CSV
 csv_file = "isil_matching_results.csv"
 with open(csv_file, mode="w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=["ISIL", "Status", "Name"])

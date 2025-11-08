@@ -1,20 +1,20 @@
 import xml.etree.ElementTree as ET
 
-#  Pfad zur Originaldatei
+# Path to original file
 xml_file = "voebvoll-20241027.xml"
 
-# Name für die kleinere Test-Datei
+# Name for the smaller test file
 output_file = "test-teil_1.xml"
 
-# anzhal der Datensätze in der Test-Datei
-max_records = 10000  # z. B. 10.000 Datensätze
+# Number of records in the test file
+max_records = 10000  # e.g. 10,000 records
 
 count = 0
 
 print(f"Starte das Aufteilen von {xml_file} ...")
 
 with open(output_file, "w", encoding="utf-8") as out:
-    out.write("<collection>\n")  # Root-Tag für MARCXML-Datei
+    out.write("<collection>\n")  # Root tag for MARCXML file
     for event, elem in ET.iterparse(xml_file, events=("end",)):
         if elem.tag == "record":
             out.write(ET.tostring(elem, encoding="unicode"))

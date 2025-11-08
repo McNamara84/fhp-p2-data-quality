@@ -13,7 +13,7 @@ LANG_CODES = {
 }
 
 def replace_name_with_code(element: ET.Element, changed_count: int) -> int:
-    """Sprachennamen mit Sprachcodes ersetzen"""
+    """Replace language names with language codes"""
     for field_041 in element.findall('datafield[@tag="041"]'):
         subfield_a = field_041.find('subfield[@code="a"]')
         if subfield_a is not None:
@@ -60,7 +60,7 @@ def enrich_language(input_file: str, output_file: str = 'language_discrepancies.
             elif language_from_041 != language_from_008:
                 discrepancies.append((language_from_008, language_from_041))
         else:
-            # Einfügen eines neuen 041-Feldes, wenn es nicht existiert
+            # Insert a new 041 field if it doesn't exist
             field_040 = elem.find('datafield[@tag="040"]')
             new_field_041 = ET.Element("datafield", tag="041", ind1=" ", ind2=" ")
             subfield_a = ET.SubElement(new_field_041, "subfield", code="a")
