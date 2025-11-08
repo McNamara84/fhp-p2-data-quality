@@ -46,12 +46,12 @@ class TestChartGenerationPrerequisites(unittest.TestCase):
 
     def test_r_script_exists(self):
         """Test: R-Skript existiert"""
-        script_path = Path(__file__).resolve().parents[1] / "generate_enrichment_charts.R"
+        script_path = Path(__file__).resolve().parents[1] / "metadata_enrichment" / "generate_enrichment_charts.R"
         self.assertTrue(script_path.exists(), f"R-Skript nicht gefunden: {script_path}")
 
     def test_r_script_syntax(self):
         """Test: R-Skript hat gültige Syntax"""
-        script_path = Path(__file__).resolve().parents[1] / "generate_enrichment_charts.R"
+        script_path = Path(__file__).resolve().parents[1] / "metadata_enrichment" / "generate_enrichment_charts.R"
         
         # R-Syntax-Check ohne Ausführung
         r_paths = [
@@ -269,7 +269,7 @@ class TestChartGeneration(unittest.TestCase):
 
     def test_chart_generation_creates_files(self):
         """Test: Chart-Generierung erstellt PNG-Dateien"""
-        script_path = Path(__file__).resolve().parents[1] / "generate_enrichment_charts.R"
+        script_path = Path(__file__).resolve().parents[1] / "metadata_enrichment" / "generate_enrichment_charts.R"
         
         r_paths = [
             r"C:\Program Files\R\R-4.5.1\bin\Rscript.exe",

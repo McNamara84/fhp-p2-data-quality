@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from enrichment_stats_server import StatsRequestHandler, start_stats_server
+from metadata_enrichment.enrichment_stats_server import StatsRequestHandler, start_stats_server
 
 
 class TestWebserverBasics(unittest.TestCase):
@@ -258,7 +258,7 @@ class TestHTMLContent(unittest.TestCase):
 
     def setUp(self):
         """Lade HTML-Template aus Datei"""
-        server_file = Path(__file__).resolve().parents[1] / "enrichment_stats_server.py"
+        server_file = Path(__file__).resolve().parents[1] / "metadata_enrichment" / "enrichment_stats_server.py"
         with open(server_file, 'r', encoding='utf-8') as f:
             self.server_code = f.read()
 
@@ -324,7 +324,7 @@ class TestServerConfiguration(unittest.TestCase):
     def test_server_localhost_only(self):
         """Test: Server bindet nur an localhost"""
         # Dies wird durch Code-Inspektion getestet
-        with open(Path(__file__).resolve().parents[1] / "enrichment_stats_server.py", encoding='utf-8') as f:
+        with open(Path(__file__).resolve().parents[1] / "metadata_enrichment" / "enrichment_stats_server.py", encoding='utf-8') as f:
             content = f.read()
             # Server sollte an 'localhost' binden, nicht '0.0.0.0'
             self.assertIn("'localhost'", content)
