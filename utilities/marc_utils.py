@@ -30,7 +30,9 @@ def split_records(
                     in_record = True
                     buffer = [line]
                 else:
-                    header_lines.append(line)
+                    # Skip collection tags from header to avoid duplicates
+                    if not (line.lstrip().startswith('<collection') or line.lstrip().startswith('</collection')):
+                        header_lines.append(line)
             elif in_record:
                 buffer.append(line)
                 if line.lstrip().startswith('</record'):
