@@ -32,7 +32,9 @@ python start.py
 - **Besitznachweise zählen**: Count possession records (049 tags) per record
 
 ### Metadata Enrichment
-The project includes an advanced metadata enrichment feature that:
+- **Sprachcodes korrigieren+anreichern**: Enriches and corrects Language Codes in Controlfield 008 and Datafield 041
+
+The project also includes an advanced metadata enrichment feature that:
 - Enriches records via the **German National Library (DNB)** using ISBN lookups
 - Adds missing titles, subtitles, publishers, publication years, and author information
 - Uses intelligent retry logic with exponential backoff for API requests
