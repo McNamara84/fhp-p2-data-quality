@@ -389,7 +389,7 @@ def main() -> None:
 
     buttons = [
         ("Nach Besitz splitten", "data_processing/split_by_possession.py"),
-        ("Nach Quelle splitten", "data_processing/split_by_source.py"),
+        ("Nach Katalogisierungsquelle splitten", "data_processing/split_by_source.py"),
         ("Metadatenelemente auflisten", "data_analysis/analyze_elements_list.py"),
         ("Metadatenelemente (Menge) analysieren", "data_analysis/analyze_elements_quantity.py"),
         ("Primärschlüssel prüfen", "data_quality/check_primary_key.py"),
@@ -399,6 +399,7 @@ def main() -> None:
         ("Doppelte ISBN/ISSN prüfen", "data_quality/check_duplicate_identifiers.py"),
         ("ISIL-Codes validieren", "data_quality/validate_isil_codes.py"),
         ("Besitznachweise zählen", "data_analysis/analyze_possession_counts.py"),
+        ("Sprachcodes korrigieren+anreichern", "data_processing/enrich_language.py"),
     ]
 
     for label, script in buttons:

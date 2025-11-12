@@ -7,12 +7,12 @@
 
 This repository contains the code used by students of the Department **Informationswissenschaften** at the *University of Applied Sciences Potsdam* (Fachhochschule Potsdam). The project is supervised by **Prof. Dr. Heike Neuroth** in cooperation with **Carsten Schneemann**, head of the Landesfachstelle für Archive und Öffentliche Bibliotheken Brandenburg.
 
-The focus is the dataset **"VÖB-Katalogabzug vom 27. Oktober 2024"**. It represents the MARC21 records of all public libraries in the federal state Brandenburg. Our goal is to evaluate the quality of this dataset and identify errors or inconsistencies.
+The focus is the dataset **"VÖB-Katalogabzug vom 27. Oktober 2024"**. It represents the MARC21 records of public libraries in the federal state Brandenburg. The goal is to evaluate the quality of this dataset and identify errors or inconsistencies.
 
 ## Features
 
 ### Graphical User Interface (GUI)
-The project includes a user-friendly GUI that allows you to execute all analysis and enrichment scripts with a single click. Start the GUI with:
+The project includes a GUI that allows you to execute all analysis and enrichment scripts with a single click. Start the GUI with:
 
 ```bash
 python start.py
@@ -32,8 +32,10 @@ python start.py
 - **Besitznachweise zählen**: Count possession records (049 tags) per record
 
 ### Metadata Enrichment
-The project includes an advanced metadata enrichment feature that:
-- Enriches records via the **Open Library API** using ISBN lookups
+- **Sprachcodes korrigieren+anreichern**: Enriches and corrects Language Codes in Controlfield 008 and Datafield 041
+
+The project also includes an advanced metadata enrichment feature that:
+- Enriches records via the **German National Library (DNB)** using ISBN lookups
 - Adds missing titles, subtitles, publishers, publication years, and author information
 - Uses intelligent retry logic with exponential backoff for API requests
 - Includes a progress dialog showing real-time statistics
@@ -90,7 +92,6 @@ Rscript install_r_packages.R
 ### Dependencies
 
 The project uses the following Python packages:
-- **colorama** (0.4.6) - Colored terminal output
 - **isbnlib** (3.10.14) - ISBN validation and processing
 - **lxml** (5.3.0) - Efficient XML parsing
 - **requests** (2.32.3) - HTTP requests for API calls
@@ -203,6 +204,11 @@ The GitHub Actions workflow runs the same tests automatically on every pull requ
 ## Output Files
 
 The scripts generate various output files:
+### Enriched xml-Files
+- `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
+- `enriched_languages.xml` - MARC21 records with enriched and corrected language codes
+
+### Statistics files
 - `elements_list.txt` - List of all metadata elements
 - `elements_quantity.csv` - Metadata element quantities
 - `elements_quantity_008_details.csv` - Detailed analysis of 008 field
@@ -211,12 +217,12 @@ The scripts generate various output files:
 - `possession_counts.csv` - Possession record counts (049 tags)
 - `book_counts.csv` - Book counts by library
 - `isil_matching_results.csv` - ISIL validation results
-- `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
+- `language_discrepancies.csv` - Language discrepancies in field 008 and 041
 - `voebvoll-20241027_enriched_stats.json` - Enrichment statistics
 - `enrichment_charts/*.png` - Statistical visualizations
 
 Split records are saved in:
-- `output_by_possession/` - Records split by possession (ISIL)
+- `output_by_possession/` - Records split by possessiong
 - `output_by_source/` - Records split by source
 
 ## License
@@ -227,5 +233,5 @@ This project is licensed under the GNU General Public License v3.0. See [LICENSE
 
 - **Prof. Dr. Heike Neuroth** - Project supervision
 - **Carsten Schneemann** - Cooperation partner (Landesfachstelle für Archive und Öffentliche Bibliotheken Brandenburg)
-- **Open Library API** - Metadata enrichment source
-- **German SIGEL Database** - ISIL validation service
+- **German National Library (DNB)** - Metadata enrichment source
+- **German ISIL-Agency at Stabi Berlin** - ISIL validation service
