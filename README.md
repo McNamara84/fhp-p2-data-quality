@@ -202,6 +202,11 @@ The GitHub Actions workflow runs the same tests automatically on every pull requ
 ## Output Files
 
 The scripts generate various output files:
+### Enriched xml-Files
+- `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
+- `enriched_languages.xml` - MARC21 records with enriched and corrected language codes
+
+### Statistics files
 - `elements_list.txt` - List of all metadata elements
 - `elements_quantity.csv` - Metadata element quantities
 - `elements_quantity_008_details.csv` - Detailed analysis of 008 field
@@ -210,12 +215,12 @@ The scripts generate various output files:
 - `possession_counts.csv` - Possession record counts (049 tags)
 - `book_counts.csv` - Book counts by library
 - `isil_matching_results.csv` - ISIL validation results
-- `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
+- `language_discrepancies.csv` - Language discrepancies in field 008 and 041
 - `voebvoll-20241027_enriched_stats.json` - Enrichment statistics
 - `enrichment_charts/*.png` - Statistical visualizations
 
 Split records are saved in:
-- `output_by_possession/` - Records split by possession (ISIL)
+- `output_by_possession/` - Records split by possessiong
 - `output_by_source/` - Records split by source
 
 ## License
