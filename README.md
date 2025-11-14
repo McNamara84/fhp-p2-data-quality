@@ -208,8 +208,11 @@ The scripts generate various output files:
 - `voebvoll-20241027_enriched.xml` - Enriched MARC21 records
 - `enriched_languages.xml` - MARC21 records with enriched and corrected language codes
 
+Split records are saved in:
+- `output_by_possession/` - Records split by possessiong
+- `output_by_source/` - Records split by source
+
 ### Statistics files
-- `elements_list.txt` - List of all metadata elements
 - `elements_quantity.csv` - Metadata element quantities
 - `elements_quantity_008_details.csv` - Detailed analysis of 008 field
 - `elements_quantity_008_values.csv` - Distinct values from 008 field
@@ -218,12 +221,8 @@ The scripts generate various output files:
 - `book_counts.csv` - Book counts by library
 - `isil_matching_results.csv` - ISIL validation results
 - `language_discrepancies.csv` - Language discrepancies in field 008 and 041
-- `voebvoll-20241027_enriched_stats.json` - Enrichment statistics
-- `enrichment_charts/*.png` - Statistical visualizations
+- `isil_matching_results.csv` - ISIL code validation
 
-Split records are saved in:
-- `output_by_possession/` - Records split by possessiong
-- `output_by_source/` - Records split by source
 
 ## License
 
